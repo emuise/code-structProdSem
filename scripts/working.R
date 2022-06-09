@@ -53,49 +53,14 @@ rcl <- keys$vlce %>%
 forests <- classify(vlce, rcl)
 names(forests) <- "strata"
 
+bec_rast <- rast(here::here(merged_loc, "bec_singles", "zones.tif"))
+
+names(bec_rast) <- "strata"
+
 #masked_all <- mask(all_rasts, bcb_rast)
 
 # locate stratified samapling points within each forest type
 
-all_rasts <- c(forests, dhi_rasts, structure_rasts)
-
-sample <- spatSample(forests,
-                     1000,
-                     method = "stratified",
-                     na.rm = T,
-                     as.df = T,
-                     xy = T)
-
-bec_rast <- rast(here::here(merged_loc, "bec_singles", "zones.tif"))
-
-bec_rast[bec_rast == 12] = NA
-
-bec_join <- cats(bec_rast)[[1]] %>%
-  tibble() %>%
-  filter(!is.na(zone)) %>%
-  rename(bec_value = value,
-         zone_name = zone)
-
-forest_join <- keys$vlce %>%
-  filter(forest == "Forest") %>%
-  select(class_val, class_name)
-
-key_table <- crossing(bec_value = bec_join$bec_value, 
-                      class_val =  forest_join$class_val) %>%
-  left_join(bec_join) %>%
-  left_join(forest_join) %>%
-  mutate(rast_num = bec_value * 1000 + class_val)
-
-both_rast <- bec_rast * 1000 + forests
-
-both_uniques <- unique(both_rast) %>% 
-  tibble()
-
-full_join(both_uniques, key_table, by = c("strata" = "rast_num")) %>% view()
+value_rasts <- c(dhi_rasts, structure_rasts)
 
 
-sample <- spatSample(both_rast, 
-           10000,
-           method = "stratified",
-           as.df = T,
-           xy = T)
