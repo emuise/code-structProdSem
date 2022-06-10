@@ -28,4 +28,3 @@ zone_rast <- vect %>%
   vect() %>%
   rasterize(y = rast("G:\\Merged\\harvest_mask\\harvest_mask.tif"), field = "zone")  %>%
   writeRaster("G:\\Merged\\bec_singles\\zones.tif")
-
