@@ -3,4 +3,6 @@
 .RData
 .Ruserdata
 scratch
-scripts\defunct
+scripts/defunct/
+data/rasts/
+data/shp/
