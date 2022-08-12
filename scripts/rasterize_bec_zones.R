@@ -16,15 +16,18 @@ pa_subzone_rast <- vect %>%
          rasterize = paste0(ifelse(protected, "p", "np"), "-", zone, "_", subzone)) %>%
   vect() %>%
   rasterize(y = rast("G:\\Merged\\harvest_mask\\harvest_mask.tif"), field = "rasterize") %>%
-  writeRaster("G:\\Merged\\bec_singles\\pa_subzones.tif")
+  writeRaster("G:\\Merged\\bec_singles\\pa_subzones.dat",
+              filetype = "envi")
 
 subzone_rast <- vect %>%
   mutate(rasterize = paste0(zone, "_", subzone)) %>%
   vect() %>%
   rasterize(y = rast("G:\\Merged\\harvest_mask\\harvest_mask.tif"), field = "rasterize") %>%
-  writeRaster("G:\\Merged\\bec_singles\\subzones.tif")
+  writeRaster("G:\\Merged\\bec_singles\\subzones.dat",
+              filetype = "envi")
 
 zone_rast <- vect %>%
   vect() %>%
   rasterize(y = rast("G:\\Merged\\harvest_mask\\harvest_mask.tif"), field = "zone")  %>%
-  writeRaster("G:\\Merged\\bec_singles\\zones.tif")
+  writeRaster("G:\\Merged\\bec_singles\\zones.dat",
+              filetype = "envi")
