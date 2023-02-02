@@ -1,0 +1,69 @@
+---
+title: "whole_game"
+format: html
+editor: visual
+---
+
+## Setup
+
+```{r setup}
+library(tidyverse)
+library(terra)
+library(sf)
+library(bcmaps)
+library(sgsR)
+library(exactextractr)
+
+#### setup ----
+terraOptions(
+  memfrac = 0.75,
+  tempdir = "E:\\temp",
+  todisk = T,
+  progress = 100
+)
+options(scipen = 999)
+
+source(here::here("scripts", "get_keys.R"))
+```
+
+Needed things
+
+```{r loads}
+vlce <- rast("G:/mosaiced/VLCE2.0/LC_Class_HMM_2015_v20_v20.dat")
+bcb <- bcmaps::bc_bound() %>%
+  vect()
+
+bcb_rast <- bcb %>%
+  rasterize(y = vlce) %>%
+  crop(bcb)
+
+vlce <- crop(vlce, bcb_rast) %>%
+  mask(bcb_rast)
+```
+
+Run the focal cell analysis. Only runs if not done yet via if statement
+
+```{r run-focal}
+focal_loc <- "G:/mosaiced/focal"
+
+if (length(list.files(focal_loc)) != 11) {
+  print("running focal analysis on vlce and 10 structure variables")
+  rmarkdown::render(here::here("scripts", "1_bc_focal_processing.qmd"))
+} else {
+  print("focal analysis already done")
+}
+```
+
+Run the sampling across each BEC zone
+
+```{r run-sample}
+sample_loc <- here::here("data", "samples")
+
+list.files(sample_loc, pattern = ".shp$")
+
+rmarkdown::render(here::here("scripts", "2_sampling.qmd"))
+```
+
+```{r}
+print("hello")
+```
