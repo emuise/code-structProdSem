@@ -1,0 +1,201 @@
+---
+title: "focals"
+format: html
+editor: visual
+---
+
+Make extended tilings
+
+```{r make-grid}
+grid_ncol <- 2
+grid_nrow <- 2
+
+# make tiles to grab samples from
+grid <-
+  rast(ncol = grid_ncol,
+       nrow = grid_ncol,
+       ext = ext(bcb_rast))
+
+values(grid) <- 1:(grid_ncol*grid_nrow)
+
+tiles_focal_loc <- here::here("scratch", "tiles_focal")
+
+dir.create(tiles_focal_loc, showWarnings = F)
+
+focal_files <- list.files(tiles_focal_loc,
+                        pattern = "^b.*\\.dat$",
+                        full.names = T)
+  
+max_tile <- str_extract(focal_files, "[0-9]{1,2}.dat$") %>%
+  str_extract("[0-9]{1,2}") %>%
+  as.numeric() %>%
+  max()
+
+if (max_tile != (grid_ncol * grid_nrow)) {
+  file.remove(list.files(focal_files, full.names = T))
+  
+  focal_files <- terra::makeTiles(
+    x = bcb_rast,
+    y = grid,
+    here::here(tiles_focal_loc, "tile_.dat"),
+    na.rm = TRUE,
+    overwrite = TRUE,
+    filetype = "ENVI",
+    datatype = "INT1U"
+  )
+}
+
+extended_focal <- focal_files %>%
+  map(rast) %>%
+  map(extend, y = 1)
+```
+
+```{r forest-rcl}
+forest_rcl <- keys$vlce %>%
+  mutate(class_name = ifelse(forest == "Forest", class_val, NA)) %>%
+  select(class_val, class_name) %>%
+  as.matrix(ncol = 2)
+
+forests <- classify(vlce, forest_rcl)
+```
+
+Function to allow mapping on the inverted variable order
+
+```{r function}
+rev_crop <- function(x, y) {
+  crop(y, x)
+}
+```
+
+Extended tiles (vlce)
+
+```{r tile-extend}
+forests_focal_tile_loc <- here::here(tiles_focal_loc, "forests", "input")
+dir.create(forests_focal_tile_loc, showWarnings = F, recursive = T)
+
+forest_save_names <- here::here(forests_focal_tile_loc,
+                                paste0("focal-forests-", 1:length(extended_focal), ".dat"))
+
+forests_extend <- extended_focal %>%
+  map(rev_crop, y = forests) %>%
+  map2(.x = ., .y = forest_save_names, .f = writeRaster,
+       filetype = "ENVI", overwrite = T)
+```
+
+Make clean structure directories
+
+```{r dir-creation}
+structure_focal_tile_loc <- here::here(tiles_focal_loc, "structure", "input")
+dir.create(structure_focal_tile_loc, showWarnings = F, recursive = T)
+
+struct_loc <- here::here("G://", "mosaiced", "structure")
+
+struct_vars <- list.dirs(struct_loc, full.names = F) %>%
+  stringi::stri_remove_empty()
+
+structure_subdirs <- here::here(structure_focal_tile_loc, struct_vars)
+
+map(structure_subdirs, dir.create, showWarnings = F)
+```
+
+Make extended tiles for each structure variable
+
+```{r structure-extend}
+for(var in struct_vars) {
+  print(var)
+  
+  r <- here::here(struct_loc, var, paste0(var, "_2015.dat")) %>%
+  rast() %>%
+  crop(bcb_rast) %>%
+  mask(bcb_rast)
+
+struct_save_names <- here::here(structure_focal_tile_loc,
+                                var,
+                                paste0("focal-", var, "-", 1:length(extended_focal), ".dat"))
+
+struct_extend <- extended_focal %>%
+  map(rev_crop, y = r) %>%
+  map2(.x = ., .y = struct_save_names, .f = writeRaster,
+       filetype = "ENVI", overwrite = T
+  )
+}
+```
+
+```{r reticulate}
+# this does the focal cell processing for all of BC based on the tiles 
+# created earlier in this script
+library(reticulate)
+use_python("C:/Users/evanmuis/Miniconda3/envs/geospatial/python.exe")
+
+source_python(here::here("scripts", "1a_focal_tiles.py"))
+
+rm(stack)
+rm(nptile)
+rm(open_tile)
+rm(valid_locs)
+```
+
+```{r mosaic}
+# mosaics the focal tiles together
+
+folders <- "E:/Sync/Masters/analysis_sem/scratch/tiles_focal" %>%
+  list.dirs() %>%
+  str_subset("output")
+
+for_fold <- str_subset(folders, "forests")
+
+struct_fold <- folders %>%
+  str_subset("structure") %>%
+  str_subset("output$", negate = T)
+
+iter_folds = c(for_fold, struct_fold)
+
+focal_save <- here::here("G:/", "mosaiced", "focal")
+
+# only do the 3 currently used
+
+# iter_folds <- c(iter_folds[1], iter_folds[8:9])
+
+mosaic_rcl <- matrix(c(0, 1, NA, 1), ncol = 2)
+
+for (folder in iter_folds) {
+  print(folder)
+  var = folder %>%
+    list.files() %>%
+    .[1] %>% # first file
+    str_split("-") %>%
+    .[[1]] %>% # unlist
+    .[2] # second item (variable)
+  
+  # lol what the fuck is this evan nobody can read it
+  # take first file w/o full names (since naming conventions the same)
+  # make it not a list
+  # take the second item in that vector (should always be the variable)
+  
+  save_name = here::here(focal_save, paste0("focal-", var, ".tif"))
+  print(save_name)
+  
+  mosaiced <- list.files(folder, full.names = T, pattern = ".dat$") %>%
+    map(rast) %>%
+    map(trim, padding = 0, value = 0) %>%
+    sprc() %>%
+    mosaic(fun = "min") %>%
+    extend(bcb_rast)
+  
+
+  mosaiced_rc <- classify(mosaiced, mosaic_rcl)
+  
+  #mosaiced <- mosaiced == 1
+  
+  # if (var != "forests") {
+  #   save_name = here::here(focal_save, "structure", var, paste0("focal-", var, ".tif"))
+  # }
+  
+  plot(mosaiced_rc, col = "green")
+  
+  dir.create(dirname(save_name), showWarnings = F)
+  
+  writeRaster(mosaiced_rc, save_name, overwrite = T)
+  
+}
+```

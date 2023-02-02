@@ -1,0 +1,377 @@
+---
+title: "sem"
+format: html
+editor: visual
+---
+
+```{r}
+library(lavaan)
+
+theme_set(theme_light())
+```
+
+extract datasets
+
+```{r}
+samples <- here::here("data", "samples", "bec") %>%
+  list.files(full.names = T, pattern = ".shp$") %>%
+  map(read_sf) %>%
+  bind_rows()
+
+samples %>%
+  st_drop_geometry() %>%
+  count(zone) %>%
+  ggplot(aes(
+    x = n,
+    y = fct_reorder(zone, n),
+    fill = zone
+  )) +
+  geom_col() +
+  ggsci::scale_fill_igv() +
+  theme_bw() +
+  labs(x = "n",
+       y = NULL,
+       fill = NULL)
+```
+
+```{r}
+all_rasts_loc <- here::here("data", "rasts", "all_rasts.dat")
+
+if (!file.exists(all_rasts_loc)) {
+  struct_locs <- here::here("G://", "mosaiced", "structure")
+  struct_rasts <- list.files(
+    struct_locs,
+    recursive = T,
+    pattern = ".dat$",
+    full.names = T
+  ) %>%
+    map(rast) %>%
+    rast()
+  
+  struct_names <- str_split(sources(struct_rasts), pattern = "/") %>%
+    lapply("[[", 4) %>% # get fourth index from names
+    unlist()
+  
+  names(struct_rasts) <- struct_names
+  
+  struct_rasts <- struct_rasts %>%
+    crop(bcb_rast, mask = T)
+  
+  dhi_rasts <-
+    list.files(here::here("G://", "mosaiced", "DHI"),
+               pattern = "2010s.tif$",
+               full.names = T) %>%
+    map(rast) %>%
+    rast()
+  
+  dhi_names <- str_split(sources(dhi_rasts), pattern = "/") %>%
+    lapply("[[", 4) %>% # get fourth index from names
+    unlist() %>%
+    str_split(pattern = "[[:punct:]]") %>%
+    lapply("[[", 2) %>% # get second index from split names
+    unlist()
+  
+  names(dhi_rasts) <- dhi_names
+  
+  dhi_rasts <- dhi_rasts %>%
+    crop(bcb_rast, mask = T)
+  
+  dhi_mm <- minmax(dhi_rasts)
+  
+  dhi_rasts_mm <- (dhi_rasts - dhi_mm[1,]) / (dhi_mm[2,] - dhi_mm[1,])
+  
+  all_rasts <- c(vlce, struct_rasts, dhi_rasts_mm)
+  
+  writeRaster(all_rasts, all_rasts_loc, overwrite = T, filetype = "envi",
+              datatype = "FLT4S")
+}
+
+all_rasts <- rast(all_rasts_loc)
+```
+
+```{r}
+extracted_samples <- extract(all_rasts, samples, bind = T)
+```
+
+)
+
+```{r}
+invalid_zones <- c("CMA", "IMA", "BAFA", "BG")
+# alpine (CMA, IMA, BAFA) & non-forest dominant (BG)
+
+extracted_df <- extracted_samples %>% 
+  st_as_sf() %>%
+  st_drop_geometry() %>%
+  filter(!(loreys_height < elev_mean | elev_p95 < elev_mean)) %>%
+  pivot_longer(basal_area:total_biomass, names_to = "variable") %>%
+  left_join(keys$continuous) %>%
+  mutate(value = value / divide_by) %>%
+  select(zone, category, ends_with("DHI"), variable, value) %>%
+  pivot_wider(names_from = "variable", values_from = "value") %>%
+  unchop(everything()) %>% # somehow does the fix i want
+  filter(elev_cv <= 1) %>% # remove erroneous values
+  drop_na() # remove anything w/ NA 
+  
+
+# groups by zone and all other structure variables 
+# takes the mean of each DHI dataset
+# effectively removing duplicates, but takes the mean instead of the first value
+extracted_df_b <- extracted_df %>%
+  group_by(across(c(zone, category, basal_area:total_biomass))) %>%
+  summarize(across(ends_with("DHI"), mean)) %>%
+  ungroup()
+```
+
+```{r}
+# downsampling procedure - allows for comparisons between models if sample size is the same (AIC and BIC are based on sample)
+
+downsample_df <- extracted_df_b %>%
+  count(zone) %>%
+  filter(!(zone %in% invalid_zones)) 
+
+downsample_no <- downsample_df %>%
+  pull(n) %>%
+  min()
+```
+
+```{r}
+set.seed(69420)
+
+clean_df <- extracted_df_b %>%
+  mutate(
+    overstory_per = percentage_first_returns_above_mean,
+    understory_per = percentage_first_returns_above_2m - percentage_first_returns_above_mean,
+    total_cover = percentage_first_returns_above_2m,
+    overstory_range = loreys_height - elev_mean,
+    understory_range = elev_mean - 2
+  ) %>%
+  relocate(zone,
+           category,
+           ends_with("DHI")) %>%
+  filter(!(zone %in% invalid_zones)) %>%
+  group_by(zone) %>%
+  slice_sample(n = downsample_no) %>%
+  select(!starts_with("perc"))
+```
+
+```{r}
+mylog <- function(data) {
+  if (any(data <= 0)) {
+    return(log1p(data))
+  } else {
+    return(log(data))
+  }
+}
+
+
+normal <- function(data) {
+  data %>%
+    mylog() %>%
+    scale() %>% 
+    as.numeric()
+}
+
+log_normal_df <- clean_df %>%
+  group_by(zone) %>%
+  mutate(across(CumDHI:understory_range, .fns = ~ normal(.x)))
+
+log_normal_df %>%
+  summarize(across(CumDHI:understory_range, .fns = ~ shapiro.test(.x)$p.value))
+```
+
+```{r}
+log_splits <- log_normal_df %>%
+  group_by(zone) %>%
+  group_split()
+```
+
+sample each bec zone down to the lowest number of samples
+
+```{r}
+set.seed(69420)
+
+zone_dfs <- extracted_df %>%
+  filter(!(zone %in% invalid_zones)) %>%
+  group_by(zone) %>%
+  group_split() %>%
+  map(slice_sample, n = downsample_no)
+```
+
+```{r}
+library(Hmisc)
+library(corrplot)
+corr <- log_normal_df %>% 
+  ungroup() %>%
+  select(CumDHI:total_biomass) %>%
+  as.matrix() %>%
+  rcorr()
+
+corrplot(corr$r,
+         type = "upper",
+         tl.col = "black",
+         tl.srt = 45,
+         p.mat = corr$P, 
+         sig.level = 0.01)
+```
+
+```{r}
+sample_names <- names(extracted_samples)
+
+dhi_vars <-
+  sample_names[(length(sample_names) - 2):length(sample_names)]
+
+v_models <-
+  paste0(
+    dhi_vars,
+    " ~ loreys_height + total_biomass + elev_stddev
+elev_stddev ~ loreys_height
+total_biomass ~ loreys_height"
+  )
+
+h_models <-
+  paste0(
+    dhi_vars,
+    " ~ basal_area + percentage_first_returns_above_2m + percentage_first_returns_above_mean
+percentage_first_returns_above_mean ~ basal_area
+percentage_first_returns_above_2m ~ basal_area"
+  )
+
+models <- c(v_models, h_models)
+```
+
+```{r some-weird-map-lol}
+bec_zones <- bec() %>%
+  mutate(area = st_area(.)) %>%
+  group_by(ZONE) %>%
+  dplyr::summarize(area = sum(area)) %>%
+  st_intersection(bc_bound())
+
+bec_counts_sf <- bec_zones %>%
+  left_join(bec_counts, by = c("ZONE" = "zone")) %>%
+  select(ZONE, n) %>%
+  mutate(ZONE = ifelse(!(ZONE %in% invalid_zones), ZONE, "Not Included"))
+
+ggplot(bec_counts_sf) +
+  geom_sf(aes(fill = ZONE), colour = "#00000000") +
+  ggsci::scale_fill_igv() +
+  scale_alpha_manual(values = c(0.5, 1)) +
+  theme_void()
+```
+
+```{r zonal-models}
+sem_extract <- function(split_df, model) {
+  zone <- split_df %>%
+    pull(zone) %>%
+    unique()
+  
+  var <- str_split(model, pattern = " ")[[1]][1]
+  fit <- sem(model = model, data = split_df)
+  
+  fits <-
+    fitmeasures(fit, c("chisq", "df", "pvalue", "cfi", "rmsea", "aic", "r2", "srmr"))
+  pars <- parameterestimates(fit) %>%
+    tibble() %>%
+    mutate(zone = zone, var = var, model = model)
+  
+  fits <- tibble(fit = names(fits), value = as.numeric(fits)) %>%
+    pivot_wider(names_from = fit, values_from = value) %>%
+    mutate(zone = zone,
+           var = var, model = model)
+  
+  interpreted <- fit %>%
+    effectsize::interpret() %>%
+    mutate(zone = zone, var = var, model = model)
+  
+  return(list(
+    # fitmeasures = fits,
+    parameters = pars,
+    interpreted = interpreted,
+    fits = fits
+  ))
+}
+
+crossed <- crossing(zone_dfs, models)
+
+dfs <- crossed %>% pull(zone_dfs)
+mods <- crossed %>% pull(models)
+
+outs <- map2(.x = dfs, .y = mods, .f = sem_extract)
+
+params <- map_df(outs, function(x) {
+    x$parameters
+  })
+
+# fitmeasures <- map_df(outs, function(x) {
+#   x$fitmeasures
+# })
+
+fitmeasures <- map_df(outs, function(x) {
+  x$interpreted
+})
+
+fits <- map_df(outs, function(x) {
+  x$fits
+})
+```
+
+```{r}
+vlce_samples <- here::here("data", "samples", "vlce") %>%
+  list.files(pattern = ".shp", full.names = T) %>%
+  map(read_sf) %>%
+  bind_rows()
+
+extracted_vlce <- extract(all_rasts, vlce_samples)
+```
+
+```{r}
+extracted_vlce %>%
+  st_drop_geometry() %>%
+  count(category)
+```
+
+```{r}
+fitmeasures %>% 
+  group_by(zone) %>%
+  dplyr::summarize(across(cfi:aic, mean))
+
+fitmeasures %>%
+  mutate(v_h = ifelse(model %in% h_models, "h", "v")) %>%
+  group_by(model) %>%
+  dplyr::summarize(across(c(cfi:aic, chisq), mean))
+```
+
+```{r}
+params %>%
+  filter(op == "~") %>%
+  group_by(model, lhs, rhs) %>%
+  dplyr::summarize(per_sig = (pvalue > 0.05) / n()) %>%
+  view()
+```
+
+```{r}
+test_mod <- "CumDHI ~ loreys_height + percentage_first_returns_above_2m + percentage_first_returns_above_mean
+percentage_first_returns_above_2m ~ total_biomass
+percentage_first_returns_above_mean ~ percentage_first_returns_above_2m + total_biomass
+total_biomass ~ loreys_height"
+
+data <- dfs[[19]] %>%
+  mutate(across(basal_area:total_biomass, scale),
+         across(basal_area:total_biomass, as.numeric))
+
+(egg <- sem(test_mod, data = data))
+
+varTable(egg)
+fitmeasures(egg)
+parameterestimates(egg)
+
+graph_sem(egg)
+```
+
+```{r}
+vlce_samples <- here::here("data", "samples", "vlce") %>%
+  list.files(full.names = T, pattern = ".shp$") %>%
+  map(read_sf) %>%
+  bind_rows()
+
+vlce_samples
+```

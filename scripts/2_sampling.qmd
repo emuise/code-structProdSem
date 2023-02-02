@@ -1,0 +1,120 @@
+---
+title: "sample bec zones"
+format: html
+editor: visual
+---
+
+```{r prep-focals}
+focal_rasts <- focal_loc %>%
+  list.files(pattern = ".tif$", full.names = T)
+
+focal_for <- focal_rasts %>%
+  str_subset(pattern = "forests") %>%
+  rast()
+
+focal_lor <- focal_rasts %>%
+  str_subset(pattern = "loreys") %>%
+  rast()
+
+focal_cov <- focal_rasts %>%
+  str_subset(pattern = "2m") %>%
+  rast()
+
+change <- rast("G:\\mosaiced\\change_attribution\\Attribution_v2.dat")
+
+change_rcl <- keys$disturbance %>%
+    mutate(class_name = ifelse(class_val > 0 &
+                                 class_val <= 4, 1, NA)) %>%
+    select(class_val, class_name) %>%
+    as.matrix(ncol = 2)
+  
+change_mask <- classify(change, change_rcl)
+```
+
+```{r sample-focals}
+bec <- bcmaps::bec()
+
+zones <- keys$bec %>%
+  pull(zone)
+
+dir.create(here::here("data", "samples"),
+           recursive = T,
+           showWarnings = F)
+
+for (zoi in zones) {
+  save_name_bec <-
+    here::here("data", "samples", "bec", paste0(zoi, ".shp"))
+  print(save_name_bec)
+  
+  save_name_vlce <-
+    here::here("data", "samples", "vlce", paste0(zoi, "-vlce.shp"))
+  print(save_name_vlce)
+  
+  dir.create(dirname(save_name_bec),
+             recursive = T,
+             showWarnings = F)
+  dir.create(dirname(save_name_vlce),
+             recursive = T,
+             showWarnings = F)
+  
+  zoi_rast <- bec %>%
+    filter(ZONE == zoi) %>%
+    rasterize(y = vlce, field = "ZONE") %>%
+    mask(bcb_rast) %>%
+    trim()
+  
+  plot(zoi_rast, col = "green")
+  
+  focal_for_mask <- focal_for %>%
+    crop(zoi_rast)
+  
+  focal_lor_mask <- focal_lor %>%
+    crop(zoi_rast)
+  
+  focal_cov_mask <- focal_cov %>%
+    crop(zoi_rast)
+  
+  change_mask_zoi <- change_mask %>%
+    crop(zoi_rast)
+  
+  masked <- zoi_rast %>%
+    mask(focal_for_mask) %>%
+    mask(focal_lor_mask) %>%
+    mask(focal_cov_mask) %>%
+    mask(change_mask_zoi)
+  
+  names(masked) <- "strata"
+  
+  print("vlce sampling")
+  
+  vlce_masked <- vlce %>%
+    crop(masked) %>%
+    mask(masked)
+
+  names(vlce_masked) <- "strata"
+
+  plot(vlce_masked)
+
+  vlce_interest_samples <-
+    sample_strat(
+      sraster = vlce_masked,
+      nSamp = 500,
+      mindist = 1000,
+      method = "random", # my focal analysis accounts for the quinnec method from sgsR
+      allocation = "equal"
+      )
+
+
+  write_sf(vlce_interest_samples, save_name_vlce, overwrite = T)
+  
+  print("bec sampling")
+
+  bec_interest_samples <-
+    sample_srs(raster = masked,
+               nSamp = 3000,
+               mindist = 1000) %>%
+    mutate(zone = zoi)
+
+  write_sf(bec_interest_samples, save_name_bec, overwrite = T)
+}
+```
