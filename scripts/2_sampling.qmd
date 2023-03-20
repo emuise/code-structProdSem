@@ -20,7 +20,7 @@ focal_cov <- focal_rasts %>%
   str_subset(pattern = "2m") %>%
   rast()
 
-change <- rast("G:\\mosaiced\\change_attribution\\Attribution_v2.dat")
+change <- rast("F:\\mosaiced\\change_attribution\\Attribution_v2.dat")
 
 change_rcl <- keys$disturbance %>%
     mutate(class_name = ifelse(class_val > 0 &
@@ -85,27 +85,27 @@ for (zoi in zones) {
   
   names(masked) <- "strata"
   
-  print("vlce sampling")
+  # print("vlce sampling")
   
-  vlce_masked <- vlce %>%
-    crop(masked) %>%
-    mask(masked)
-
-  names(vlce_masked) <- "strata"
-
-  plot(vlce_masked)
-
-  vlce_interest_samples <-
-    sample_strat(
-      sraster = vlce_masked,
-      nSamp = 500,
-      mindist = 1000,
-      method = "random", # my focal analysis accounts for the quinnec method from sgsR
-      allocation = "equal"
-      )
-
-
-  write_sf(vlce_interest_samples, save_name_vlce, overwrite = T)
+  # vlce_masked <- vlce %>%
+  #   crop(masked) %>%
+  #   mask(masked)
+  # 
+  # names(vlce_masked) <- "strata"
+  # 
+  # plot(vlce_masked)
+  # 
+  # vlce_interest_samples <-
+  #   sample_strat(
+  #     sraster = vlce_masked,
+  #     nSamp = 500,
+  #     mindist = 1000,
+  #     method = "random", # my focal analysis accounts for the quinnec method from sgsR
+  #     allocation = "equal"
+  #     )
+  # 
+  # 
+  # write_sf(vlce_interest_samples, save_name_vlce, overwrite = T)
   
   print("bec sampling")
 

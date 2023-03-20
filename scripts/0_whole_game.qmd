@@ -12,7 +12,8 @@ library(terra)
 library(sf)
 library(bcmaps)
 library(sgsR)
-library(exactextractr)
+library(cols4all)
+# library(exactextractr)
 
 #### setup ----
 terraOptions(
@@ -29,7 +30,7 @@ source(here::here("scripts", "get_keys.R"))
 Needed things
 
 ```{r loads}
-vlce <- rast("G:/mosaiced/VLCE2.0/LC_Class_HMM_2015_v20_v20.dat")
+vlce <- rast("F:/mosaiced/VLCE2.0/LC_Class_HMM_2015_v20_v20.dat")
 bcb <- bcmaps::bc_bound() %>%
   vect()
 
@@ -44,7 +45,7 @@ vlce <- crop(vlce, bcb_rast) %>%
 Run the focal cell analysis. Only runs if not done yet via if statement
 
 ```{r run-focal}
-focal_loc <- "G:/mosaiced/focal"
+focal_loc <- "F:/mosaiced/focal"
 
 if (length(list.files(focal_loc)) != 11) {
   print("running focal analysis on vlce and 10 structure variables")

@@ -88,7 +88,7 @@ Make clean structure directories
 structure_focal_tile_loc <- here::here(tiles_focal_loc, "structure", "input")
 dir.create(structure_focal_tile_loc, showWarnings = F, recursive = T)
 
-struct_loc <- here::here("G://", "mosaiced", "structure")
+struct_loc <- here::here("F://", "mosaiced", "structure")
 
 struct_vars <- list.dirs(struct_loc, full.names = F) %>%
   stringi::stri_remove_empty()
@@ -125,7 +125,7 @@ struct_extend <- extended_focal %>%
 # this does the focal cell processing for all of BC based on the tiles 
 # created earlier in this script
 library(reticulate)
-use_python("C:/Users/evanmuis/Miniconda3/envs/geospatial/python.exe")
+use_python("C:/Users/evanmuis/AppData/Local/miniconda3/envs/geospatial/python.exe")
 
 source_python(here::here("scripts", "1a_focal_tiles.py"))
 
@@ -150,7 +150,7 @@ struct_fold <- folders %>%
 
 iter_folds = c(for_fold, struct_fold)
 
-focal_save <- here::here("G:/", "mosaiced", "focal")
+focal_save <- here::here("F:/", "mosaiced", "focal")
 
 # only do the 3 currently used
 

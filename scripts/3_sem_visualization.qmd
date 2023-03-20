@@ -6,39 +6,60 @@ editor: visual
 
 ```{r}
 library(lavaan)
+library(lavaanPlot)
+library(semPlot)
 
 theme_set(theme_light())
+```
+
+```{r}
+mylog <- function(data) {
+  if (any(data <= 0)) {
+    return(log1p(data))
+  } else {
+    return(log(data))
+  }
+}
+
+# normalization from grace et al 2016
+# first does mylog (does natural logarithm. if 0s present, does log(one + x))
+# then scales to z scores
+# results it more normal looking data
+normal <- function(data) {
+  data %>%
+    mylog() %>%
+    scale() %>%
+    as.numeric()
+}
 ```
 
 extract datasets
 
 ```{r}
-samples <- here::here("data", "samples", "bec") %>%
+bec_samples <- here::here("data", "samples", "bec") %>%
   list.files(full.names = T, pattern = ".shp$") %>%
   map(read_sf) %>%
   bind_rows()
 
-samples %>%
-  st_drop_geometry() %>%
-  count(zone) %>%
-  ggplot(aes(
-    x = n,
-    y = fct_reorder(zone, n),
-    fill = zone
-  )) +
-  geom_col() +
-  ggsci::scale_fill_igv() +
-  theme_bw() +
-  labs(x = "n",
-       y = NULL,
-       fill = NULL)
+vlce_samples <- here::here("data", "samples", "vlce") %>%
+  list.files(full.names = T, pattern = ".shp$") %>%
+  map(read_sf) %>%
+  bind_rows()
 ```
 
 ```{r}
-all_rasts_loc <- here::here("data", "rasts", "all_rasts.dat")
+
+all_rasts_loc <- here::here("data", "rasts", "all_rasts_bec.dat")
 
 if (!file.exists(all_rasts_loc)) {
-  struct_locs <- here::here("G://", "mosaiced", "structure")
+  # bec_rast <- bec() %>%
+  #   rasterize(y = vlce, field = "ZONE") %>%
+  #   crop(bcb_rast) %>%
+  #   mask(bcb_rast)
+  # 
+  # names(bec_rast) <- "bec"
+  
+  struct_locs <- here::here("F://", "mosaiced", "structure")
   struct_rasts <- list.files(
     struct_locs,
     recursive = T,
@@ -58,7 +79,7 @@ if (!file.exists(all_rasts_loc)) {
     crop(bcb_rast, mask = T)
   
   dhi_rasts <-
-    list.files(here::here("G://", "mosaiced", "DHI"),
+    list.files(here::here("F://", "mosaiced", "DHI"),
                pattern = "2010s.tif$",
                full.names = T) %>%
     map(rast) %>%
@@ -76,37 +97,110 @@ if (!file.exists(all_rasts_loc)) {
   dhi_rasts <- dhi_rasts %>%
     crop(bcb_rast, mask = T)
   
-  dhi_mm <- minmax(dhi_rasts)
+  # dhi_mm <- minmax(dhi_rasts)
+  #
+  # dhi_rasts_mm <- (dhi_rasts - dhi_mm[1,]) / (dhi_mm[2,] - dhi_mm[1,])
   
-  dhi_rasts_mm <- (dhi_rasts - dhi_mm[1,]) / (dhi_mm[2,] - dhi_mm[1,])
+  all_rasts <- c(vlce, struct_rasts, dhi_rasts) %>%
+    mask(bcb_rast)
   
-  all_rasts <- c(vlce, struct_rasts, dhi_rasts_mm)
-  
-  writeRaster(all_rasts, all_rasts_loc, overwrite = T, filetype = "envi",
-              datatype = "FLT4S")
+  writeRaster(
+    all_rasts,
+    all_rasts_loc,
+    overwrite = T,
+    filetype = "envi",
+    datatype = "FLT4S"
+  )
 }
 
 all_rasts <- rast(all_rasts_loc)
+
+bec_rast <- bec() %>%
+  rasterize(y = vlce, field = "ZONE") %>%
+  crop(bcb_rast) %>%
+  mask(bcb_rast)
+
+names(bec_rast) <- "bec"
+all_rasts <- c(bec_rast, vlce, all_rasts)
 ```
 
 ```{r}
-extracted_samples <- extract(all_rasts, samples, bind = T)
-```
+bec_sample_loc <- here::here("data", "samples", "bec_extracted.shp")
+vlce_sample_loc <- here::here("data", "samples", "vlce_extracted.shp")
 
-)
+if (!file.exists(bec_sample_loc)) {
+  bec_samples_e <- extract(all_rasts, bec_samples, bind = T)
+  writeVector(bec_samples_e, bec_sample_loc, overwrite = T)
+}
+if (!file.exists(vlce_sample_loc)) {
+  vlce_samples_e <- extract(all_rasts, vlce_samples, bind = T)
+  writeVector(vlce_samples_e, vlce_sample_loc, overwrite = T)
+}
+
+bec_samples_e <- vect(bec_sample_loc)
+vlce_samples_e <- vect(vlce_sample_loc)
+```
 
 ```{r}
 invalid_zones <- c("CMA", "IMA", "BAFA", "BG")
 # alpine (CMA, IMA, BAFA) & non-forest dominant (BG)
 
-extracted_df <- extracted_samples %>% 
+bec_df <- bec_samples_e %>% 
   st_as_sf() %>%
   st_drop_geometry() %>%
+  select(bec:VarDHI) %>%
+  drop_na() %>%
+  tibble() %>%
+  filter(!(bec %in% invalid_zones))
+
+names_manual <- c(
+  "bec",
+  "category",
+  "basal_area",
+  "elev_cv",
+  "elev_mean",
+  "elev_p95",
+  "elev_stddev",
+  "gross_stem_volume",
+  "loreys_height",
+  "percentage_first_returns_above_2m",
+  "percentage_first_returns_above_mean",
+  "total_biomass",
+  "CumDHI",
+  "MinDHI",
+  "VarDHI"
+)
+
+
+# names(bec_df) <- names(all_rasts)
+names(bec_df) <- names_manual
+
+```
+
+```{r}
+
+bec_df <- bec_df %>%
+  mutate(strata = bec) %>%
+  relocate(strata) 
+
+vlce_df <- vlce_samples %>%
+  st_as_sf() %>%
+  st_drop_geometry() %>%
+  select(bec:VarDHI) 
+
+# names(bec_df) <- names(all_rasts)
+names(vlce_df) <- names_manual
+
+vlce_df <- vlce_df %>%
+  mutate(strata = category) %>%
+  relocate(strata) 
+
+strata_df <- bind_rows(bec_df, vlce_df) %>%
   filter(!(loreys_height < elev_mean | elev_p95 < elev_mean)) %>%
   pivot_longer(basal_area:total_biomass, names_to = "variable") %>%
   left_join(keys$continuous) %>%
   mutate(value = value / divide_by) %>%
-  select(zone, category, ends_with("DHI"), variable, value) %>%
+  select(strata, bec, category, ends_with("DHI"), variable, value) %>%
   pivot_wider(names_from = "variable", values_from = "value") %>%
   unchop(everything()) %>% # somehow does the fix i want
   filter(elev_cv <= 1) %>% # remove erroneous values
@@ -116,262 +210,1987 @@ extracted_df <- extracted_samples %>%
 # groups by zone and all other structure variables 
 # takes the mean of each DHI dataset
 # effectively removing duplicates, but takes the mean instead of the first value
-extracted_df_b <- extracted_df %>%
-  group_by(across(c(zone, category, basal_area:total_biomass))) %>%
-  summarize(across(ends_with("DHI"), mean)) %>%
-  ungroup()
+strata_df_b <- strata_df %>%
+  group_by(across(c(strata, bec, category, basal_area:total_biomass))) %>%
+  dplyr::summarize(across(ends_with("DHI"), mean)) %>%
+  ungroup() %>%
+  filter(!(bec %in% invalid_zones))
 ```
 
 ```{r}
-# downsampling procedure - allows for comparisons between models if sample size is the same (AIC and BIC are based on sample)
 
-downsample_df <- extracted_df_b %>%
-  count(zone) %>%
-  filter(!(zone %in% invalid_zones)) 
 
-downsample_no <- downsample_df %>%
+# see number of pixels
+n_dups <- strata_df %>%
+  group_by(across(c(
+    strata, bec, category, basal_area:total_biomass
+  ))) %>%
+  summarize(n = n())
+
+egg <- n_dups %>%
+  filter(!(bec %in% invalid_zones)) %>%
+  group_by(strata, duplicated = n != 1) %>%
+  summarize(duplicate_pixels = sum(n)) %>%
+  pivot_wider(names_from = duplicated, 
+              values_from = duplicate_pixels) %>%
+  mutate(total = `TRUE` + `FALSE`,
+         per_dup = `TRUE` / total,
+         strata_name = glue::glue("{strata} (n = {total})"),
+         label = glue::glue(" n[dup]: {total}"))
+
+n_dups %>% 
+  ggplot(aes(x = n, fill = strata)) + 
+  geom_histogram() + 
+  facet_wrap(~strata, scales = "free")
+
+egg %>%
+  ggplot(aes(x = fct_reorder(strata_name, per_dup), 
+             y = per_dup)) +
+  
+  geom_col() +
+  geom_text(aes(label = label), hjust = 0,
+            parse = T) + 
+  lims(y = c(0, 1)) +
+  labs(x = NULL,
+         y = "Proportion of Duplicates") +
+  coord_flip() +
+  theme(panel.grid = element_blank())
+  
+  
+n_dups %>%
+  ggplot(aes(x = n)) +
+  geom_histogram() +
+  labs(x = "n",
+       y = NULL,
+       title = "Number of duplicated structure pixels") +
+  theme_light()
+
+```
+
+```{r}
+# downsampling procedure - allows for comparisons between models if 
+# sample size is the same (AIC and BIC are based on sample)
+
+downsample_no <- strata_df_b %>%
+  count(strata) %>%
   pull(n) %>%
   min()
 ```
 
 ```{r}
 set.seed(69420)
+# downsample the vlce with equivalent sampling across becs
+# if possible, if not it takes the maximum available samples and adjusts to 
+# account
 
-clean_df <- extracted_df_b %>%
+downsample_prop <- function(strat_tib) {
+  # this function samples equal to the downsample number
+  # across each bec zone, for each strata
+  # if a zone does not have enough to be an equal number of samples
+  # it takes all of those samples, and adjusts other zones to meet
+  # the total number of desired samples (downsample number)
+  bec_counts <- strat_tib %>%
+    count(bec)
+  
+  total_bec <- bec_counts %>%
+    pull(bec) %>%
+    length()
+  
+  bec_sub <- bec_counts %>%
+    filter(n <= ceiling(downsample_no / 12)) %>%
+    pull(bec)
+  
+  df_sub <- strat_tib %>%
+    filter(bec %in% bec_sub)
+  
+  n_sub <- nrow(df_sub)
+  
+  n_rest <- downsample_no - n_sub
+  
+  df_over <- strat_tib %>%
+    filter(!(bec %in% bec_sub)) %>%
+    group_by(bec) %>%
+    slice_sample(n = ceiling(n_rest / (total_bec - length(bec_sub)))) %>%
+    ungroup() %>%
+    slice_sample(n = n_rest)
+  
+  bind_rows(df_over, df_sub)
+}
+
+vlce_ds <- strata_df_b %>%
+  filter(strata == category) %>%
+  group_by(strata) %>%
+  group_split() %>%
+  map(downsample_prop) %>%
+  bind_rows()
+
+# downsample bec zones. does not matter which forest type they come from
+
+bec_ds <- strata_df_b %>%
+  filter(strata != category) %>%
+  group_by(strata) %>%
+  slice_sample(n = downsample_no)
+
+strata_ds <- bind_rows(vlce_ds, bec_ds)
+
+meg_dir <- here::here("data", "samples", "meg")
+
+dir.create(meg_dir, showWarnings = F)
+write_csv(strata_ds, here::here(meg_dir, "downsampled.csv"))
+write_csv(strata_df_b, here::here(meg_dir, "full.csv"))
+```
+
+```{r}
+clean_df <- strata_ds %>%
   mutate(
-    overstory_per = percentage_first_returns_above_mean,
+    percentage_first_returns_above_mean = percentage_first_returns_above_mean,
     understory_per = percentage_first_returns_above_2m - percentage_first_returns_above_mean,
-    total_cover = percentage_first_returns_above_2m,
+    percentage_first_returns_above_2m = percentage_first_returns_above_2m,
     overstory_range = loreys_height - elev_mean,
-    understory_range = elev_mean - 2
+    understory_range = elev_mean - 2,
+    over_biomass = total_biomass * (percentage_first_returns_above_mean / percentage_first_returns_above_2m),
+    under_biomass = total_biomass * (understory_per / percentage_first_returns_above_2m)
   ) %>%
-  relocate(zone,
+  relocate(strata,
+           bec,
            category,
-           ends_with("DHI")) %>%
-  filter(!(zone %in% invalid_zones)) %>%
-  group_by(zone) %>%
-  slice_sample(n = downsample_no) %>%
-  select(!starts_with("perc"))
+           ends_with("DHI"))
+
+# applies normalization by strata of analysis (i.e. bec zone or forest type)
+
+normal_df <- clean_df %>%
+  group_by(strata) %>%
+  mutate(across(CumDHI:under_biomass, .fns = ~ normal(.x)))
+
+write_csv(normal_df, here::here(meg_dir, "downsampled_normal.csv"))
 ```
 
 ```{r}
-mylog <- function(data) {
-  if (any(data <= 0)) {
-    return(log1p(data))
-  } else {
-    return(log(data))
-  }
-}
+dhi_vars <- c("CumDHI",
+              "VarDHI",
+              "MinDHI")
+models <- c(
+  paste0(
+    dhi_vars,
+    " ~ elev_p95 + total_biomass + elev_cv
+    elev_cv ~ elev_p95
+    total_biomass ~ elev_p95"
+  ),
+  paste0(
+    dhi_vars,
+    " ~ percentage_first_returns_above_2m + basal_area + percentage_first_returns_above_mean
+    percentage_first_returns_above_mean ~ percentage_first_returns_above_2m
+    basal_area ~ percentage_first_returns_above_2m"
+  )
+)
 
-
-normal <- function(data) {
-  data %>%
-    mylog() %>%
-    scale() %>% 
-    as.numeric()
-}
-
-log_normal_df <- clean_df %>%
-  group_by(zone) %>%
-  mutate(across(CumDHI:understory_range, .fns = ~ normal(.x)))
-
-log_normal_df %>%
-  summarize(across(CumDHI:understory_range, .fns = ~ shapiro.test(.x)$p.value))
-```
-
-```{r}
-log_splits <- log_normal_df %>%
-  group_by(zone) %>%
+splits <- normal_df %>%
+  group_by(strata) %>%
   group_split()
 ```
 
-sample each bec zone down to the lowest number of samples
+```{r}
+lavaans <- crossing(data = splits, models = models) %>%
+  mutate(outs = map2(.x = models, .y = data, .f = sem))
+
+fitmeasures_list <- c("chisq", "df", "pvalue", "cfi", "rmsea", "aic", "srmr")
+
+myfits <- function(lavaan) {
+  try(fitmeasures(lavaan, fit.measures = fitmeasures_list), silent = T)
+}
+
+tib_out <- lavaans %>%
+  mutate(var = word(models, start = 1),
+         strata = data %>% map(pull, var = strata) %>% map(unique) %>% unlist(),
+         fits = outs %>% map(myfits),
+         pars = outs %>% map(parameterestimates) %>% map(tibble)#,
+         # interpreted = outs %>% map(effectsize::interpret)
+         ) %>%
+  relocate(data, models)
+
+non_converge <- tib_out %>%
+  filter(fits %>% map(class) == "try-error")
+
+converge <- tib_out %>%
+  # remove any models that don't converge
+  filter(!(fits %>% map(class) == "try-error"))
+
+converge_fm <- converge %>%
+  select(models, var, strata, fits, pars) %>%
+  mutate(fits = fits %>% map(as.numeric) %>%
+           map(tibble) %>%
+           map(mutate, measures = fitmeasures_list) %>%
+           map(rename, value = `<dbl>`) %>%
+           map(pivot_wider, names_from = measures, values_from = value)) %>%
+  unnest(fits) %>%
+  mutate(mod_follows = str_remove(models, ".*DHI"))
+```
+
+```{r}
+global_fits <- converge_fm %>%
+  mutate(global_sig = pvalue > 0.05,
+         mod_follows = str_remove(models, ".*DHI")) %>%
+  group_by(mod_follows) %>%
+  dplyr::summarize(per_sig = (sum(global_sig) / n()),
+                   count = n()) %>%
+  arrange(desc(per_sig))
+
+global_fits
+
+# fan et al. (2016) says chi ^ 2 saturates w/ samples size and as such isn't
+# the be all end all
+# need to also report: SRMR, CFI, and RMSEA
+# aic can be used to compare models
+# CFI > 0.95
+# RMSEA < 0.06
+# SRMR < 0.09
+```
+
+```{r}
+vlce_colours <- keys$vlce %>%
+  filter(forest == "Forest") %>%
+  select(strata = name_clean, colour = ntems_colour)
+
+# bc government bec colours.
+# i prefer the igv palette
+bec_colours <- bcmaps::bec_colors() %>%
+  tibble(strata = names(bcmaps::bec_colours()), colour = .)
+
+bec_colours <- keys$bec %>%
+  mutate(colour = ggsci::pal_igv("default")(16)) %>%
+  select(strata = zone, colour) %>% 
+  filter(!(strata %in% invalid_zones))
+
+
+strata_colours <- bind_rows(vlce_colours, bec_colours) %>%
+  arrange(strata)
+
+mod_names <- c("Vertical Structure",
+               "Horizontal Structure")
+
+selected_models <- models %>%
+  str_remove(".*DHI") %>%
+  unique()
+
+names_df <- tibble(mod_follows = selected_models,
+                   mod_names,
+                   order = 1:2)
+
+
+converge_fm %>%
+  mutate(mod_follows = str_remove(models, ".*DHI")) %>%
+  left_join(names_df) %>%
+  ggplot(aes(x = pvalue, y = chisq, col = strata)) +
+  geom_point() +
+  geom_vline(xintercept = 0.05,
+             col = "red",
+             lty = "dashed") +
+  annotate(
+    "Text",
+    label = "Global Fit Accepted",
+    x = 0.051,
+    y = 100,
+    angle = 270,
+    col = "red"
+  ) +
+  facet_wrap(~ fct_reorder(mod_names, order),
+             ncol = 1) +
+  scale_colour_manual(values = strata_colours %>% pull(colour) %>% unname()) +
+  theme_bw() +
+  labs(x = "P-value",
+       y = (expression(chi^2)),
+       colour = NULL) +
+  theme(panel.grid = element_blank())
+```
+
+```{r}
+par_df <- converge_fm %>%
+  group_by(strata) %>%
+  select(models, var, strata, pars, mod_follows) %>%
+  unnest(cols = pars) %>%
+  filter(op == "~") 
+
+split_dfs <- par_df %>%
+  group_by(strata) %>%
+  group_split()
+
+fit_df <- converge_fm %>%
+  select(models, var, strata, mod_follows, pvalue:srmr)
+
+coords_df <-
+  tibble(
+    pos = c(
+      "elev_p95",
+      "elev_cv",
+      "total_biomass",
+      "percentage_first_returns_above_2m",
+      "basal_area",
+      "percentage_first_returns_above_mean",
+      "dhi",
+      "dhi"
+    ),
+    x = c(0, 2, 2, 0, 2, 2, 4, 4),
+    y = c(0, 1,-1, 0, 1,-1, 0, 0),
+    mod_follows = c(
+      selected_models[1],
+      selected_models[1],
+      selected_models[1],
+      selected_models[2],
+      selected_models[2],
+      selected_models[2],
+      selected_models[1],
+      selected_models[2]
+    )
+  )
+
+arrows_df <-
+  tibble(
+    rhs = c(
+      "elev_p95",
+      "elev_cv",
+      "total_biomass",
+      "elev_p95",
+      "elev_p95"
+    ),
+    lhs = c(
+      "dhi",
+      "dhi",
+      "dhi" ,
+      "elev_cv",
+      "total_biomass"
+    )
+  ) %>%
+  left_join(coords_df, by = c(lhs = "pos")) %>%
+  rename(xend = x,
+         yend = y) %>%
+  left_join(coords_df, by = c(rhs = "pos")) %>%
+  rename(xstart = x,
+         ystart = y) %>%
+  mutate(
+    xend = xend * 0.975,
+    yend = yend * 0.9,
+    yend = case_when(ystart == 1 ~ 0.15,
+                     ystart == -1 ~ -0.15,
+                     T ~ yend),
+    ystart = ystart * 0.9
+  ) 
+
+arrows_df2 <-
+  tibble(
+    rhs = c(
+      "percentage_first_returns_above_2m",
+      "basal_area",
+      "percentage_first_returns_above_mean",
+      "percentage_first_returns_above_2m",
+      "percentage_first_returns_above_2m"
+    ),
+    lhs = c(
+      "dhi",
+      "dhi",
+      "dhi",
+      "basal_area",
+      "percentage_first_returns_above_mean"
+    )
+  ) %>%
+  left_join(coords_df, by = c(lhs = "pos")) %>%
+  rename(xend = x,
+         yend = y) %>%
+  left_join(coords_df, by = c(rhs = "pos")) %>%
+  rename(xstart = x,
+         ystart = y) %>%
+  mutate(
+    xend = xend * 0.975,
+    yend = yend * 0.9,
+    yend = case_when(ystart == 1 ~ 0.15,
+                     ystart == -1 ~ -0.15,
+                     T ~ yend),
+    ystart = ystart * 0.9
+  )
+
+arrows_both <- bind_rows(arrows_df, arrows_df2) %>%
+  rename(mod_follows = mod_follows.x) %>%
+  select(-mod_follows.y)
+
+label_df <- coords_df %>% 
+  crossing(var = c("CumDHI", "VarDHI", "MinDHI")) %>% 
+  mutate(pos = case_when(pos == "dhi" ~ var, T ~ pos)) %>%
+  mutate(x = case_when(pos == "elev_p95" | pos == "percentage_first_returns_above_2m" ~ 0.25, T ~ x)) %>%
+  left_join(keys$continuous, by = c("pos" = "variable")) %>%
+  mutate(var_long = case_when(is.na(var_long) ~ pos,
+                              T ~ var_long),
+         x = case_when(endsWith(pos, "DHI") ~ 3.85,
+                       T ~ x)) %>%
+  select(!c(divide_by, unit))
+
+
+plot_sem <- function(split_df) {
+  strata_name <- split_df %>%
+    pull(strata) %>%
+    unique()
+  
+  fit <- fit_df %>%
+    filter(strata == strata_name)
+  
+  plot_df <- split_df %>%
+    mutate(lhs = case_when(endsWith(lhs, "DHI") ~ "dhi", T ~ lhs)) %>%
+    left_join(arrows_both) %>%
+    mutate(lhs = case_when(lhs == "dhi" ~ var,
+                           T ~ lhs)) 
+  
+  est_label_df <- plot_df %>%
+    group_by(var, mod_follows) %>%
+    mutate(xmid = ((xend + xstart) / 2),
+           ymid = ((yend + ystart) / 2) + 0.125) %>%
+    select(var, xmid, ymid, est)
+  
+  plot_df %>%
+    ggplot() +
+    geom_segment(
+      aes(
+        x = xstart,
+        y = ystart,
+        xend = xend,
+        yend = yend,
+        lty = pvalue < 0.05,
+        col = est,
+      ),
+      arrow = arrow(),
+      linewidth = 2
+    ) +
+    # geom_segment(aes(x = xstart, y = ystart, xend = xend, yend = yend,
+    #                  col = pvalue < 0.05),
+    #              ) +
+    geom_label(data = label_df, aes(x = x, y = y, label = var_long)) +
+    geom_text(data = est_label_df, aes(
+      x = xmid,
+      y = ymid,
+      label = round(est, digits = 2)
+    )) +
+    facet_grid(rows = vars(var),
+               cols = vars(mod_follows)) +
+    theme_void() +
+    theme(strip.text = element_blank()) +
+    labs(lty = "Significant Path",
+         col = "Standardized Estimate",
+         title = strata_name) +
+    theme(legend.position = "bottom") +
+    scico::scale_colour_scico(palette = "hawaii",
+                              midpoint = 0,
+                              limits = c(-2, 2)) +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    geom_text(data = fit, aes(
+      x = 3.7,
+      y = 0.75,
+      label = paste0(
+        "CFI:",
+        round(cfi, digits = 3),
+        "\nRMSEA:",
+        round(rmsea, digits = 3),
+        "\nSRMR:",
+        round(srmr, digits = 3),
+        "\nP-Value:",
+        round(pvalue, digits = 3)
+      )
+    ))
+  
+  ggsave(here::here("outputs", "strata_sem", paste0(strata_name, ".png")), dpi = 300,
+         width = unit(13, "inches"),
+         height = unit(11, "inches"),
+         bg = "white")
+  
+}
+
+map(split_dfs, plot_sem)
+```
+
+```{r}
+# this cell is about aggregating to the thing. i also want to look at it by BEC
+# vs forest type
+
+vlce_classes <- vlce_colours %>%
+  pull(strata)
+
+sig_est_df <- par_df %>% 
+  ungroup() %>%
+  mutate(sig_est = ifelse(pvalue < 0.05, est, NA)) 
+
+all_est_df <- sig_est_df %>%
+  group_by(var, lhs, rhs, mod_follows) %>%
+  summarize(num_sig = sum(pvalue < 0.05),
+            per_sig = num_sig / n(),
+            mean_sig_est = mean(sig_est, na.rm = T)) %>%
+  arrange(mean_sig_est) %>%
+  mutate(strata = "All Strata")
+
+vlce_est_df <- sig_est_df %>%
+  filter(strata %in% vlce_classes) %>%
+  group_by(var, lhs, rhs, mod_follows) %>%
+  summarize(num_sig = sum(pvalue < 0.05),
+            per_sig = num_sig / n(),
+            mean_sig_est = mean(sig_est, na.rm = T)) %>%
+  arrange(mean_sig_est) %>%
+  mutate(strata = "Forest Type")
+
+bec_est_df <- sig_est_df %>%
+  filter(!(strata %in% vlce_classes)) %>%
+  group_by(var, lhs, rhs, mod_follows) %>%
+  summarize(num_sig = sum(pvalue < 0.05),
+            per_sig = num_sig / n(),
+            mean_sig_est = mean(sig_est, na.rm = T)) %>%
+  arrange(mean_sig_est) %>%
+  mutate(strata = "BEC Zones")
+```
+
+```{r}
+group_dfs <- list(all_est_df, vlce_est_df, bec_est_df)
+
+plot_sem_group <- function(group_df) {
+  strata <- group_df %>%
+    pull(strata) %>%
+    unique
+  
+  plot_df <- group_df %>%
+    mutate(lhs = case_when(endsWith(lhs, "DHI") ~ "dhi", T ~ lhs)) %>%
+    left_join(arrows_both) %>%
+    mutate(lhs = case_when(lhs == "dhi" ~ var,
+                           T ~ lhs)) %>%
+    ungroup()
+  
+  est_label_df <- plot_df %>%
+    group_by(var, mod_follows) %>%
+    mutate(xmid = (xend + xstart) / 2,
+           ymid = ((yend + ystart) / 2) + 0.125) %>%
+    select(var, xmid, ymid, mean_sig_est)
+  
+  plot_df %>%
+    ggplot() +
+    geom_segment(aes(
+      x = xstart,
+      y = ystart,
+      xend = xend,
+      yend = yend,
+      linewidth = per_sig,
+      col = mean_sig_est,
+    ),
+    arrow = arrow()) +
+    # geom_segment(aes(x = xstart, y = ystart, xend = xend, yend = yend,
+    #                  col = pvalue < 0.05),
+    #              ) +
+    geom_label(data = label_df, aes(x = x, y = y, label = var_long)) +
+    geom_text(data = est_label_df, aes(x = xmid, y = ymid, label = round(mean_sig_est, digits = 2))) +
+    facet_grid(rows = vars(var),
+               cols = vars(mod_follows)) +
+    theme_void() +
+    theme(strip.text = element_blank()) +
+    labs(linewidth = "Proportion of Significant Paths",
+         col = "Standardized Estimate",
+         title = strata) +
+    theme(legend.position = "bottom") +
+    scico::scale_colour_scico(palette = "hawaii", 
+                              midpoint = 0,
+                              limits = c(-2, 2))
+  
+  ggsave(here::here("outputs", "strata_sem", "aggregated", paste0(strata, ".png")), dpi = 300,
+         width = unit(13, "inches"),
+         height = unit(11, "inches"),
+         bg = "white")
+}
+
+map(group_dfs, plot_sem_group)
+```
+
+```{r map}
+sig_est_df %>% 
+  filter(!is.na(sig_est),
+         endsWith(lhs, "DHI")) %>%
+  group_by(strata, models) %>%
+  slice_max(abs(sig_est)) %>%
+  select(mod_follows, var, strata, rhs, est)
+
+
+
+```
+
+```{r}
+ver_model_latent <- '# latent variables
+     fs =~ elev_cv + total_biomass + elev_p95
+     elev_cv ~ elev_p95
+     total_biomass ~ elev_p95
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+hor_model_latent <- '# latent variables
+     fs =~ percentage_first_returns_above_2m + basal_area + percentage_first_returns_above_mean
+     basal_area ~ percentage_first_returns_above_2m
+     percentage_first_returns_above_mean ~ percentage_first_returns_above_2m
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+internal_model_latent <- '# latent variables
+     fs =~ elev_cv + elev_stddev
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+basic_model_latent <- '# latent variables
+     fs =~ percentage_first_returns_above_2m + elev_p95 
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+derived_model_latent <- '# latent variables
+     fs =~ loreys_height + basal_area + elev_cv + elev_stddev + gross_stem_volume + total_biomass
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+all_model_latent <- '# latent variables
+     fs =~ basal_area + elev_cv + elev_mean + elev_stddev + loreys_height + percentage_first_returns_above_2m + percentage_first_returns_above_mean + total_biomass + gross_stem_volume + elev_p95
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+all_model_latent <- '# latent variables
+     fs =~ elev_cv + elev_mean + elev_stddev + loreys_height + percentage_first_returns_above_2m + percentage_first_returns_above_mean +  elev_p95
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+latent_models <- c(all_model_latent, derived_model_latent, basic_model_latent, internal_model_latent, hor_model_latent, ver_model_latent)
+
+
+```
+
+```{r}
+
+  
+bec_normal <- bec_df %>%
+  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+
+splits <- bec_normal %>%
+  group_by(bec) %>%
+  group_split()
+
+latent_lavaans <- crossing(splits, latent_models) %>%
+  mutate(outs = map2(.x = latent_models, .y = splits, .f = sem))
+
+egg <- crossing(splits = list(bec_normal), latent_models) %>%
+  mutate(outs = map2(.x = latent_models, .y = splits, .f = sem))
+```
+
+```{r}
+egg$outs[[6]] %>%
+  graph_sem(layout = get_layout(., "layout_nicely"))
+```
+
+```{r}
+fitmeasures_list <- c("chisq", "df", "pvalue", "cfi", "rmsea", "aic", "srmr")
+
+myfits <- function(lavaan) {
+  try(fitmeasures(lavaan, fit.measures = fitmeasures_list), silent = T)
+}
+
+tib_out <- latent_lavaans %>%
+  mutate(strata = splits %>% map(pull, var = strata) %>% map(unique) %>% unlist(),
+         fits = outs %>% map(myfits),
+         pars = outs %>% map(parameterestimates) %>% map(tibble)#,
+         # interpreted = outs %>% map(effectsize::interpret)
+         ) %>%
+  relocate(splits, latent_models)
+
+non_converge <- tib_out %>%
+  filter(fits %>% map(class) == "try-error")
+
+converge <- tib_out %>%
+  # remove any models that don't converge
+  filter(!(fits %>% map(class) == "try-error"))
+
+converge_fm <- converge %>%
+  select(latent_models, strata, fits, pars) %>%
+  mutate(fits = fits %>% map(as.numeric) %>%
+           map(tibble) %>%
+           map(mutate, measures = fitmeasures_list) %>%
+           map(rename, value = `<dbl>`) %>%
+           map(pivot_wider, names_from = measures, values_from = value)) %>%
+  unnest(fits)
+```
+
+```{r}
+crossing(df = list(normal_df), latent_models) %>%
+  mutate(outs = map2(.x = latent_models, .y = df, .f = sem))
+```
+
+```{r}
+sem(latent_models[[1]], data = normal_df) %>%
+  summary()
+```
+
+```{r}
+for(s in clean_df %>%
+    pull(strata) %>%
+    unique) {
+  ggally_plot <- clean_df %>%
+    filter(strata == s) %>%
+    select(-bec,-category) %>%
+    select(strata:total_biomass) %>%
+    mutate(MinDHI = normal(MinDHI)) %>%
+    #select(CumDHI:total_biomass) %>%
+    GGally::ggpairs(aes(colour = strata, alpha = 0.2))
+  
+  ggsave(
+    here::here("outputs", glue::glue("ggally_{s}.png")),
+    plot = ggally_plot,
+    dpi = 300,
+    height = 40,
+    width = 40
+  )
+}
+
+
+
+```
+
+```{r}
+# efa
+efa_data <- bec_normal %>%
+  select(basal_area:VarDHI)
+
+efa_fit <- efa(data = efa_data,
+               nfactors = 1:2)
+
+summary(efa_fit, nd = 3L, cutoff = 0.2, dot.cutoff = 0.05)
+```
+
+```{r}
+# cfa
+cfa_model <- "vert =~ elev_mean + elev_p95 + elev_stddev
+              hor =~ percentage_first_returns_above_2m + percentage_first_returns_above_mean
+            
+              CumDHI ~ vert + hor + elev_cv
+              VarDHI ~ vert + hor + elev_cv
+              MinDHI ~ vert + hor + elev_cv"
+
+cfa_fit <- sem(cfa_model, bec_normal)
+
+summary(cfa_fit)
+
+
+lavaanPlot(cfa_fit, coefs = T)
+```
+
+```{r}
+bec_normal <- bec_df %>%
+  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+
+all_model_latent <- '# latent variables
+     fs =~ elev_cv + elev_mean + *elev_stddev + *loreys_height + percentage_first_returns_above_2m + *percentage_first_returns_above_mean +  *elev_p95
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+
+all_model_latent <- '# latent variables
+     fs =~ elev_cv + elev_p95 + percentage_first_returns_above_2m
+# add hierarchical model here
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+subs <- bec_normal %>%
+  slice_sample(n = 500)
+
+egg <- sem(all_model_latent, bec_normal) 
+egg %>% summary()
+
+egg %>% semPaths(what = "est")
+```
+
+```{r}
+ver_model_latent <- '# latent variables
+     fs =~ elev_cv + total_biomass + elev_p95
+     total_biomass ~ elev_p95
+
+   # dhi follows fs
+    CumDHI ~ fs
+    MinDHI ~ fs
+    VarDHI ~ fs
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+egg <- sem(ver_model_latent, bec_normal)
+
+egg %>% summary()
+
+egg %>% semPaths(what = "est")
+```
+
+Heatmaps
+
+```{r}
+library(dendextend)
+library(cluster)
+# clustering to select variables of interest
+
+
+bec_iter <- bec_normal %>%
+  filter(bec != "BG") %>%
+  pull(bec) %>%
+  unique()
+
+
+here::here("outputs", "heatmap") %>%
+  dir.create()
+for (s in bec_iter) {
+  spellman <- bec_normal %>%
+    filter(strata == s) %>%
+    select(basal_area:total_biomass) %>%
+    slice_sample(n = 236) %>%
+    as.matrix() %>%
+    Hmisc::rcorr()
+  
+  spellman_p <- spellman %>%
+    .$P
+  
+  spellman_cor <- spellman %>%
+    .$r
+  
+  spellman_dist <- as.dist(1 - spellman_cor)
+  
+  spellman_tree <- hclust(spellman_dist, method = "complete")
+  
+  spellman_dend <- as.dendrogram(spellman_tree)
+  
+  plot(color_branches(spellman_dend, k = 4))
+  
+  
+
+  spellman.kmedoids <- pam(spellman_dist, 4)
+  
+  kclusters <- spellman.kmedoids$cluster
+  
+  kclusters.reordered <- kclusters[order.dendrogram(spellman_dend)]
+  dend.colors <-
+    unique(get_leaves_branches_attr(color_branches(spellman_dend, k = 4), attr =
+                                      "col"))
+  plot(branches_attr_by_clusters(spellman_dend, kclusters.reordered , dend.colors))
+  
+  color.scheme <-
+    rev(RColorBrewer::brewer.pal(10, "RdBu")) # generate the color scheme to use
+  color.scheme <- rev(scico::scico(n = 9, palette = "batlow"))
+  
+  p_labs <- spellman_p %>%
+    cut(
+      breaks = c(0, 0.001, 0.01, 0.05, 1),
+      labels = c("***", "**", "*", "NS"),
+      right = F
+    ) %>%
+    matrix(nrow = nrow(spellman_p))
+  
+  
+  png(
+    filename = here::here("outputs", "heatmap", glue::glue("heatmap_{s}.png")),
+    height = 12,
+    width = 12,
+    units = "in",
+    res = 300
+  )
+  gplots::heatmap.2(
+    spellman_cor,
+    Rowv = ladderize(spellman_dend),
+    Colv = ladderize(spellman_dend),
+    dendrogram = "both",
+    revC = TRUE,
+    # rev column order of dendrogram so conforms to natural representation
+    trace = "none",
+    density.info = "none",
+    col = color.scheme,
+    key.title = NA,
+    key.xlab = "Correlation",
+    cellnote = p_labs
+    # cexRow = 0.5,
+    # cexCol = 0.5
+  )
+  
+  dev.off()
+}
+```
+
+```{r}
+bec_normal <- bec_df %>%
+  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+
+all_model_latent <- '# latent variables
+     fs =~ elev_cv + elev_p95 + percentage_first_returns_above_2m
+
+   # dhi follows fs
+    CumDHI ~ fs
+
+   # covariances
+    CumDHI ~~ MinDHI
+    MinDHI ~~ VarDHI
+    VarDHI ~~ CumDHI
+
+'
+
+all_models <- c(all_model_latent, models)
+
+bec_normal %>%
+  filter(bec != "BG") %>%
+  group_by(bec) %>%
+  nest() %>%
+  crossing(all_models) %>%
+  mutate(out = map2(.x = all_models, .y = data, .f = sem))
+
+out <- sem(all_model_latent, data = bec_normal %>%
+             filter(bec == "BG"))
+
+summary(out)
+```
 
 ```{r}
 set.seed(69420)
+plot_bec_df <- bec_df %>%
+  filter(elev_cv <= 1000) %>%
+  group_by(bec) %>%
+  slice_sample(n = 172)
 
-zone_dfs <- extracted_df %>%
-  filter(!(zone %in% invalid_zones)) %>%
-  group_by(zone) %>%
-  group_split() %>%
-  map(slice_sample, n = downsample_no)
+plot_bec_df %>%
+  ggplot(aes(x = elev_p95, 
+             y = CumDHI, 
+             col = bec)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") + 
+  facet_wrap(~bec) +
+  ggsci::scale_color_igv()
+
+plot_bec_df %>%
+  ggplot(aes(x = CumDHI, 
+             fill = bec)) + 
+  geom_histogram() +
+  facet_wrap(~bec) +
+  ggsci::scale_color_igv()
 ```
 
 ```{r}
-library(Hmisc)
-library(corrplot)
-corr <- log_normal_df %>% 
-  ungroup() %>%
-  select(CumDHI:total_biomass) %>%
-  as.matrix() %>%
-  rcorr()
+dhi_vars <- c("CumDHI",
+              "VarDHI",
+              "MinDHI")
+models <- c(
+  paste0(
+    dhi_vars,
+    " ~ elev_p95 + total_biomass + elev_cv
+    elev_cv ~ elev_p95
+    total_biomass ~ elev_p95"
+  ),
+  paste0(
+    dhi_vars,
+    " ~ percentage_first_returns_above_2m + total_biomass + elev_cv
+    elev_cv ~ percentage_first_returns_above_2m
+    total_biomass ~ percentage_first_returns_above_2m"
+  )
+)
 
-corrplot(corr$r,
-         type = "upper",
-         tl.col = "black",
-         tl.srt = 45,
-         p.mat = corr$P, 
-         sig.level = 0.01)
+bec_normal <- bec_df %>%
+  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+
+
+lavaans <- bec_normal %>%
+  filter(bec != "BG") %>%
+  group_by(bec) %>%
+  nest() %>%
+  crossing(models) %>%
+  mutate(outs = map2(.x = models, .y = data, .f = sem))
+
+
 ```
 
 ```{r}
-sample_names <- names(extracted_samples)
 
-dhi_vars <-
-  sample_names[(length(sample_names) - 2):length(sample_names)]
-
-v_models <-
-  paste0(
-    dhi_vars,
-    " ~ loreys_height + total_biomass + elev_stddev
-elev_stddev ~ loreys_height
-total_biomass ~ loreys_height"
-  )
-
-h_models <-
-  paste0(
-    dhi_vars,
-    " ~ basal_area + percentage_first_returns_above_2m + percentage_first_returns_above_mean
-percentage_first_returns_above_mean ~ basal_area
-percentage_first_returns_above_2m ~ basal_area"
-  )
-
-models <- c(v_models, h_models)
-```
-
-```{r some-weird-map-lol}
-bec_zones <- bec() %>%
-  mutate(area = st_area(.)) %>%
-  group_by(ZONE) %>%
-  dplyr::summarize(area = sum(area)) %>%
-  st_intersection(bc_bound())
-
-bec_counts_sf <- bec_zones %>%
-  left_join(bec_counts, by = c("ZONE" = "zone")) %>%
-  select(ZONE, n) %>%
-  mutate(ZONE = ifelse(!(ZONE %in% invalid_zones), ZONE, "Not Included"))
-
-ggplot(bec_counts_sf) +
-  geom_sf(aes(fill = ZONE), colour = "#00000000") +
-  ggsci::scale_fill_igv() +
-  scale_alpha_manual(values = c(0.5, 1)) +
-  theme_void()
-```
-
-```{r zonal-models}
-sem_extract <- function(split_df, model) {
-  zone <- split_df %>%
-    pull(zone) %>%
-    unique()
-  
-  var <- str_split(model, pattern = " ")[[1]][1]
-  fit <- sem(model = model, data = split_df)
-  
-  fits <-
-    fitmeasures(fit, c("chisq", "df", "pvalue", "cfi", "rmsea", "aic", "r2", "srmr"))
-  pars <- parameterestimates(fit) %>%
-    tibble() %>%
-    mutate(zone = zone, var = var, model = model)
-  
-  fits <- tibble(fit = names(fits), value = as.numeric(fits)) %>%
-    pivot_wider(names_from = fit, values_from = value) %>%
-    mutate(zone = zone,
-           var = var, model = model)
-  
-  interpreted <- fit %>%
-    effectsize::interpret() %>%
-    mutate(zone = zone, var = var, model = model)
-  
-  return(list(
-    # fitmeasures = fits,
-    parameters = pars,
-    interpreted = interpreted,
-    fits = fits
-  ))
+fitmeasures_list <- c("chisq", "df", "pvalue", "cfi", "rmsea", "aic", "srmr")
+myfits <- function(lavaan) {
+  try(fitmeasures(lavaan, fit.measures = fitmeasures_list), silent = T)
 }
 
-crossed <- crossing(zone_dfs, models)
+tib_out <- lavaans %>%
+  mutate(var = word(models, start = 1),
+         #strata = data %>% map(pull, var = strata) %>% map(unique) %>% unlist(),
+         fits = outs %>% map(myfits),
+         pars = outs %>% map(parameterestimates) %>% map(tibble)#,
+         # interpreted = outs %>% map(effectsize::interpret)
+         ) %>%
+  relocate(data, models)
 
-dfs <- crossed %>% pull(zone_dfs)
-mods <- crossed %>% pull(models)
+non_converge <- tib_out %>%
+  filter(fits %>% map(class) == "try-error")
 
-outs <- map2(.x = dfs, .y = mods, .f = sem_extract)
+non_converge
 
-params <- map_df(outs, function(x) {
-    x$parameters
+converge <- tib_out %>%
+  # remove any models that don't converge
+  filter(!(fits %>% map(class) == "try-error"))
+
+converge_fm <- converge %>%
+  select(bec, var, models, fits, pars) %>%
+  mutate(fits = fits %>% map(as.numeric) %>%
+           map(tibble) %>%
+           map(mutate, measures = fitmeasures_list) %>%
+           map(rename, value = `<dbl>`) %>%
+           map(pivot_wider, names_from = measures, values_from = value)) %>%
+  unnest(fits) %>%
+  mutate(mod_follows = str_remove(models, ".*DHI"))
+
+converge_fm %>% group_by(models) %>%
+  summarize(across(chisq:srmr, mean)) %>%
+  arrange(desc(cfi))
+
+
+```
+
+```{r}
+converge_fm %>%
+  group_by(bec, var) %>%
+  mutate(aic_d = aic - min(aic)) %>%
+  group_by(mod_follows) %>%
+  filter(mod_follows == " ~ elev_p95 + total_biomass + elev_cv\n    elev_cv ~ elev_p95\n    total_biomass ~ elev_p95" & aic_d != 0)
+```
+
+```{r}
+converge_unnest <- converge %>% 
+  select(bec, models, var, pars) %>%
+  unnest(pars) 
+
+strongest_counts <- converge_unnest %>%
+  filter(pvalue < 0.05) %>%
+  filter(endsWith(lhs, "DHI")) %>%
+  filter(op == "~") %>% 
+  group_by(bec, models) %>%
+  slice_max(abs(est)) %>%
+  group_by(var, models, rhs) %>%
+  summarize(n = n(),
+            mean_est = mean(est)) %>%
+  mutate(model = ifelse(str_detect(models, "elev_p95"), "Height Model", "Cover Model"))
+
+strongest_counts %>%
+  group_by(var, models) %>%
+  mutate(per = n / sum(n)) %>%
+  left_join(keys$continuous, by = c("rhs" = "variable")) %>%
+  ggplot(aes(x = model, y = per, fill = var_long)) +
+  geom_col() +
+  facet_wrap(~var) +
+  labs(x = "Model",
+       y = "Proportion of Strongest Significant Predictor",
+       fill = "Predictor",
+       title = "Fig. (x): Proportion of strongest signficant forest structural predictors of yearly productivity metrics \nin models based on canopy cover vs canopy height."
+       ) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  theme(legend.position = "bottom") +
+  scale_fill_discrete_c4a_cat("okabe")
+
+ggsave(here::here("outputs", "path_bars.png"))
+  
+```
+
+```{r}
+
+bec <- bec()
+
+
+bec_dissolve_loc <-
+  here::here("data", "shapefiles", "bec_dissolve.shp")
+
+if (!file.exists(bec_dissolve_loc)) {
+  dir.create(dirname(bec_dissolve_loc), showWarnings = F)
+  
+  bec_dissolve <- bec %>%
+    st_intersection(bc_bound()) %>%
+    select(zone = ZONE,
+           geometry) %>%
+    group_by(zone) %>%
+    summarize(geometry = st_union(geometry)) %>%
+    st_write(bec_dissolve_loc, append = F)
+}
+bec_dissolve <- read_sf(bec_dissolve_loc)
+
+for_map <- converge_unnest %>%
+  filter(pvalue < 0.05) %>%
+  filter(endsWith(lhs, "DHI")) %>%
+  filter(op == "~") %>%
+  mutate(model = ifelse(str_detect(models, "elev_p95"), "Height Model", "Cover Model")) %>%
+  group_by(bec, var, model) %>%
+  slice_max(abs(est)) %>%
+  select(var, bec, model, rhs, est) %>%
+  left_join(keys$continuous %>%
+              select(variable, var_long),
+            by = c("rhs" = "variable")) %>%
+  mutate(var_long = as.factor(var_long)) %>%
+  ungroup() %>%
+  complete(var, bec, model) %>%
+  # filter(var == "CumDHI",
+  #        model == "Cover Model") %>%
+  left_join(bec_dissolve, by = c("bec" = "zone"))
+```
+
+```{r}
+div_cols <- c(
+  c4a("troy", 5),
+  c4a("pi_yg", 5),
+  c4a("pu_or", 5),
+  c4a("div_tq_wh_pk", 5)
+)
+
+var_preds <- converge_unnest %>% pull(lhs) %>% unique() %>% str_subset(., "[^DHI]$") 
+
+var_long <- keys$continuous %>%
+  filter(variable %in% var_preds) %>%
+  pull(var_long)
+
+col_join <- crossing(
+  var_long,
+  strength = c("a", "b", "c", "d", "e")) %>%
+  mutate(col = div_cols) %>%
+  mutate(col = ifelse(strength == "c", "grey80", col))
+
+col_join <- crossing(
+  var_long,
+  strength = c("a", "b", "c", "d", "e")) %>%
+  mutate(col = div_cols) %>%
+  mutate(col = ifelse(strength == "c", "grey80", col))
+
+
+legend_cols <- col_join %>%
+  pull(col) %>%
+  .[str_order(.)]
+map_legend <- col_join %>%
+  ggplot(aes(x = fct_rev(strength), y = var_long, fill = col)) +
+  geom_tile() +
+  scale_fill_manual(values = legend_cols) +
+  theme_void() +
+  theme(legend.position = "none",
+        axis.text = element_text())
+
+ggsave(here::here("outputs", "map_legend_biv.svg"), plot = map_legend, bg = "white", device = "svg")
+
+est_mm <- for_map %>% 
+  select(-geometry) %>% 
+  summarize(min = min(est, na.rm = T), 
+            max = max(est, na.rm = T))
+
+seq <- seq(0, 1,
+                 by = 0.01)
+
+myseq <- seq(est_mm$min * 100 %>% round(2), est_mm$max * 100 %>% round(2), by = 0.01)
+
+(alpha_legend <- crossing(var_preds, seq) %>%
+  left_join(keys$continuous, by = c("var_preds" = "variable")) %>%
+  ggplot(aes(x = seq, y ="1", fill = fct_rev(var_preds), alpha = seq)) +
+  geom_col() +
+  theme_void() +
+  theme(legend.position = "none",
+        axis.text.y = element_text()) +
+  facet_grid(cols = vars(var_long))
+
+)
+
+alpha_legend
+
+ggsave(here::here("outputs", "alpha_legend.png"), plot = alpha_legend, device = "png")
+
+```
+
+```{r}
+added_cols <- for_map %>%
+  arrange(desc(est)) %>%
+  mutate(
+    strength = case_when(
+      est <= 1 & est > 0.6  ~ "a",
+      est <= 0.6 & est > 0.2 ~ "b",
+      est <= 0.2 & est > -0.2 ~ "c",
+      est <= -0.2 & est > -0.6 ~ "d",
+      est <= -0.6 & est > -1 ~ "e",
+      T ~ NA
+    )
+  ) %>%
+  left_join(col_join)
+
+added_cols %>% 
+  drop_na() %>%
+  select(-geometry) %>% 
+  ggplot(aes(x = est, y = bec, fill = var_long)) + 
+  geom_col(position = "dodge") + 
+  facet_grid(cols = vars(var),
+             rows = vars(model)) +
+  labs(x = "Standardized Path Estimate for Strongest Predictor",
+       y = NULL,
+       fill = "Predictor") +
+  theme(legend.position = "bottom",
+        panel.grid = element_blank()) +
+  geom_vline(xintercept = 0, alpha = 0.5, col = "grey")
+
+ggsave(here::here("outputs", "strongest_predictor_bar.png"))
+
+plot_cols <- added_cols %>%
+  pull(col) %>%
+  unique() %>%
+  .[str_order(.)]
+
+# bivariate plot
+
+plot <- ggplot() +
+  geom_sf(data = added_cols, aes(geometry = geometry, fill = col), col = "#00000000") +
+  scale_fill_manual(values = plot_cols) +
+  facet_grid(cols = vars(var),
+             rows = vars(model)) + 
+  theme_void() +
+  theme(legend.position = "none",
+        plot.title = element_text()) +
+  labs(title = "Fig (x): Map of strongest structural attribute predictor strength on yearly productivity metrics by BEC zone for the two proposed models. \nStrengths between -0.2 and 0.2 are shown in light grey. If there are no significant predictors, shown in dark grey")
+
+# alpha plots
+
+plot <- ggplot() +
+  geom_sf(data = added_cols, aes(geometry = geometry, fill = var_long, alpha = est), col = "#00000000") +
+  #scale_fill_manual(values = plot_cols) +
+  facet_grid(cols = vars(var),
+             rows = vars(model)) + 
+  theme_void() +
+  theme(legend.position = "none",
+        plot.title = element_text()) 
+# +
+#   labs(title = "Fig (x): Map of strongest structural attribute predictor strength on yearly productivity metrics by BEC zone for the two proposed models. \nStrengths between -0.2 and 0.2 are shown in light grey. If there are no significant predictors, shown in dark grey")
+
+ggsave(here::here("outputs", "path_map.png"), plot, bg = "white")
+```
+
+Exploratory Factor Analysis for eSEM
+```{r}
+efa_data <- bec_normal %>%
+  select(basal_area:total_biomass)
+efa_fit <- efa(
+  efa_data,
+  nfactors = 1:2, # global model maxes at 2 factors, 2 is min aic
+  rotation = "geomin",
+  rotation.args = list(geomin.epsilon = .1)
+)
+
+summ <- summary(efa_fit, cutoff = 0.5, dot.cutoff = 0.05)
+
+summ$fit.table
+
+loadings <- efa_fit$loadings %>%
+  as.data.frame() %>%
+  tibble() %>%
+  mutate(item = efa_fit$loadings %>% rownames()) %>%
+  pivot_longer(cols = c(f1, f2),
+               names_to = "latent",
+               values_to = "loading")
+
+anchors = c(f1 = "elev_p95", f2 = "percentage_first_returns_above_2m")
+# anchor using simple rs metrics
+
+loadings_filtered <- loadings %>%
+  filter(loading >= 0.5)
+esem_df <- loadings_filtered %>%
+  mutate(
+    anchor = case_when(
+      latent == "f1" & item == "elev_p95" ~ T,
+      latent == "f2" & item == "percentage_first_returns_above_2m" ~ T,
+      T ~ F
+    ),
+    syntax = ifelse(
+      anchor,
+      glue::glue("{loading}*{item}"),
+      glue::glue("start({loading})*{item}")
+    )
+  ) %>%
+  group_by(latent) %>%
+  summarize(esem = paste0(syntax, collapse = " + ")) %>%
+  mutate(latent = toupper(latent),
+         esem = glue::glue("{latent} =~ {esem}")) 
+esem_mod <- esem_df %>%
+  pull(esem) %>%
+  paste0(collapse = " \n ")
+
+dhi_esem <- paste0("CumDHI ~ elev_cv + F1 + F2
+        VarDHI ~ elev_cv + F1 + F2
+        MinDHI ~ elev_cv + F1 + F2
+       ",
+       esem_mod)
+
+dhi_esem_fit <- cfa(dhi_esem, data = bec_normal) 
+```
+
+```{r}
+library(lavaanPlot)
+
+e_opts <-
+  lavaanPlot::formatting(list(color = "orange"),
+                         list(color = "red"),
+                         list(color = "blue"),
+                         type = "edge")
+
+dhi_esem_fit %>%
+  lavaanPlot::lavaanPlot(model = .,
+                         coefs = T,
+                         edge_options = list(color = "grey"),
+                         sig = 0.05,
+                         covs = T,
+                         graph_options = list(layout = "circo"))
+
+modificationIndices(dhi_esem_fit) %>%
+  tibble() %>% 
+  arrange(desc(epc))
+
+egg <- summary(dhi_esem_fit)
+
+egg$pe
+```
+
+grouped esems
+
+```{r}
+splits <- bec_normal %>%
+  group_by(bec) %>%
+  group_split()
+
+get_efa <- function(split_df) {
+  # get bec zone to label output df
+  zone <- split_df %>%
+    pull(bec) %>%
+    unique()
+  
+  # subset data
+  efa_bec_data <- split_df %>%
+    select(basal_area:total_biomass)
+  
+  efas <- map(
+    1:4,
+    .f = function(x) {
+      efa(
+        efa_bec_data,
+        nfactors = x,
+        rotation = "geomin",
+        rotation.args = list(geomin.epsilon = .001)
+      )
+    }
+  )
+  
+  summs <- map(
+    efas,
+    .f = function(x) {
+      # print(x)
+      tryCatch({
+        summary(x)
+      }, error = function(e) {
+        NULL
+      }, finally = NULL)
+    }
+  )
+  
+  fitmeasures <- map_dfr(
+    summs,
+    .f = function(x) {
+      #nf <- x$nfac
+      x$fit.table %>% as.data.frame() %>% tibble() %>%
+        mutate(nf = x$nfactors)
+    }
+  )
+  
+  nfactor_select <- fitmeasures %>%
+    slice_min(aic) %>%
+    pull(nf) %>%
+    as.numeric()
+  
+  
+  
+  loadings_wide <- efas[[nfactor_select]]$loadings %>%
+    as.data.frame() %>%
+    tibble() %>%
+    mutate(item = efas[[nfactor_select]]$loadings %>%
+             rownames(),
+           bec = zone)
+  
+  loadings_long <- loadings_wide %>%
+    pivot_longer(!c(item, bec),
+                 names_to = "latent",
+                 values_to = "loading")
+  
+  item_max_load <- loadings_long %>%
+    group_by(item) %>%
+    slice_max(order_by = loading, n = 1)
+  
+  anchors <- loadings_long %>%
+    group_by(item) %>%
+    slice_max(order_by = loading, n = 2) %>%
+    summarize(dif = max(loading) - min(loading)) %>%
+    left_join(item_max_load) %>%
+    group_by(latent) %>%
+    slice_max(order_by = dif, n = 1) %>%
+    select(item, latent, bec) %>%
+    mutate(anchor = T)
+  
+  if(nfactor_select == 1) {
+    anchors <- loadings_long %>%
+      slice_max(order_by = loading, n = 1) %>%
+      mutate(anchor = T) %>%
+      select(!loading)
+  }
+  
+  out_loading <- loadings_long %>%
+    left_join(anchors) %>%
+    mutate(anchor = ifelse(is.na(anchor), F, anchor))
+  # this contains anchors
+  # number of latent variables
+  # strong loadings for latent variables
+  # bec zone
+  # can also be used to get which 'item's (fs variables) are not included in the latents
+  return(list(efa = efas[[nfactor_select]], loadings = out_loading))
+}
+
+bec_efas <- map(splits, get_efa)
+
+efas <- bec_efas %>%
+  map(.f = function(x) {
+    x$efa
   })
 
-# fitmeasures <- map_df(outs, function(x) {
-#   x$fitmeasures
-# })
+all_loadings <- bec_efas %>%
+  map_dfr(.f = function(x) x$loading)
+```
 
-fitmeasures <- map_df(outs, function(x) {
-  x$interpreted
-})
+```{r loadings-grouped-plot}
+anchor_vars <- all_loadings %>% 
+  filter(anchor) %>% 
+  select(anchor_var = item, bec, latent)
 
-fits <- map_df(outs, function(x) {
-  x$fits
-})
+loadings_clean <- all_loadings %>% 
+  filter(loading >= 0.5) %>%
+  left_join(anchor_vars) %>% 
+  mutate(latent_labelled = case_when(anchor_var == "percentage_first_returns_above_2m" ~ "Canopy Cover",
+                                     anchor_var == "elev_cv" ~ "Structural Complexity",
+                                     T ~ "Height and Biomass")) %>%
+  left_join(keys$continuous, by = c("item" = "variable")) %>%
+  select(-divide_by, -unit)
+
+reorder_df <- loadings_clean %>%
+  distinct(var_long) %>%
+  arrange(var_long) %>%
+  bind_cols(order = c(4, 
+                      3, 
+                      1, 
+                      6, 
+                      9, 
+                      5, 
+                      7, 
+                      8, 
+                      2, 
+                      10)) %>%
+  arrange(order)
+
+loadings_clean_order <- left_join(loadings_clean, reorder_df)
+
+single_loads <- loadings_clean_order %>%
+  group_by(item, bec) %>%
+  filter(n() == 1)
+
+multi_loads <- loadings_clean_order %>%
+  group_by(item, bec) %>%
+  filter(n() != 1) %>%
+  group_by(bec) %>%
+  group_split()
+  
+latent_plot <- ggplot(data = loadings_clean_order, aes(x = fct_reorder(var_long, order, .desc = T), y = bec)) +
+  geom_tile(data = single_loads, aes(fill = latent_labelled), width = 0.9, height = 0.9)
+
+for (loading in multi_loads) {
+  latent_plot = latent_plot + 
+    geom_tile(data = loading, aes(fill = fct_rev(latent_labelled)),
+            width = 0.90, height = 0.9,
+            position = "dodge")
+}
+
+latent_plot_all <- latent_plot +
+  scale_fill_discrete_c4a_cat(palette = "batlow", reverse = T) +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Latent Groups") +
+  coord_flip()
+
+ggsave(here::here("outputs", "latent_groups.png"), plot = latent_plot_all)
+# title = "Fig (x): Groups of latent variables with loadings greater than or equal to 0.5 for each BEC zone. Loadings were determined using exploratory factor \nanalysis with up to four latent variables, and selecting the number of possible latent variables with the lowest AIC. All forest structure variables were \npotentially included as indicators in each latent variable."
+
+# Exploratory factor analysis shows three groups of latent variables (Figure (x). We assigned the groups to latent variables indicating canopy cover / biomass metrics, canopy height / biomass metrics, and structural complexity metrics. We assigned the indicators to latent variable groups by examining anchors for each latent variable. The anchors were calculated by choosing the indicator variable with the largest difference between the maximum value in a given loading compared to to said indicators loadings in all other latent variables.
+#Bunchgrass, notably, has one latent variable. It covers all indicators, except for structural complexity. This is possibly due to the small amount of forests in the Bunchgrass BEC zone. CDF and CWH are the only BEC zones to include elevation standard deviation in their structural complexity latent variable. Notably, these two are both coastal BEC zones, with large trees and high energy availability. A structural complexity latent variable is only found in five BEC zones.
 ```
 
 ```{r}
-vlce_samples <- here::here("data", "samples", "vlce") %>%
-  list.files(pattern = ".shp", full.names = T) %>%
-  map(read_sf) %>%
-  bind_rows()
+splits <- bec_normal %>%
+  group_by(bec) %>%
+  group_split()
 
-extracted_vlce <- extract(all_rasts, vlce_samples)
+get_efa <- function(split_df) {
+  # get bec zone to label output df
+  zone <- split_df %>%
+    pull(bec) %>%
+    unique()
+  
+  # subset data
+  efa_bec_data <- split_df %>%
+    select(basal_area:VarDHI)
+  
+  efas <- map(
+    1:5,
+    .f = function(x) {
+      efa(
+        efa_bec_data,
+        nfactors = x,
+        rotation = "geomin",
+        rotation.args = list(geomin.epsilon = .001)
+      )
+    }
+  )
+  
+  summs <- map(
+    efas,
+    .f = function(x) {
+      # print(x)
+      tryCatch({
+        summary(x)
+      }, error = function(e) {
+        NULL
+      }, finally = NULL)
+    }
+  )
+  
+  fitmeasures <- map_dfr(
+    summs,
+    .f = function(x) {
+      #nf <- x$nfac
+      x$fit.table %>% as.data.frame() %>% tibble() %>%
+        mutate(nf = x$nfactors)
+    }
+  )
+  
+  nfactor_select <- fitmeasures %>%
+    slice_min(aic) %>%
+    pull(nf) %>%
+    as.numeric()
+  
+  
+  
+  loadings_wide <- efas[[nfactor_select]]$loadings %>%
+    as.data.frame() %>%
+    tibble() %>%
+    mutate(item = efas[[nfactor_select]]$loadings %>%
+             rownames(),
+           bec = zone)
+  
+  loadings_long <- loadings_wide %>%
+    pivot_longer(!c(item, bec),
+                 names_to = "latent",
+                 values_to = "loading")
+  
+  item_max_load <- loadings_long %>%
+    group_by(item) %>%
+    slice_max(order_by = loading, n = 1)
+  
+  anchors <- loadings_long %>%
+    group_by(item) %>%
+    slice_max(order_by = loading, n = 2) %>%
+    summarize(dif = max(loading) - min(loading)) %>%
+    left_join(item_max_load) %>%
+    group_by(latent) %>%
+    slice_max(order_by = dif, n = 1) %>%
+    select(item, latent, bec) %>%
+    mutate(anchor = T)
+  
+  if(nfactor_select == 1) {
+    anchors <- loadings_long %>%
+      slice_max(order_by = loading, n = 1) %>%
+      mutate(anchor = T) %>%
+      select(!loading)
+  }
+  
+  out_loading <- loadings_long %>%
+    left_join(anchors) %>%
+    mutate(anchor = ifelse(is.na(anchor), F, anchor))
+  # this contains anchors
+  # number of latent variables
+  # strong loadings for latent variables
+  # bec zone
+  # can also be used to get which 'item's (fs variables) are not included in the latents
+  return(list(efa = efas[[nfactor_select]], loadings = out_loading))
+}
+
+bec_efas <- map(splits, get_efa)
+
+efas <- bec_efas %>%
+  map(.f = function(x) {
+    x$efa
+  })
+
+all_loadings <- bec_efas %>%
+  map_dfr(.f = function(x) x$loading)
+```
+
+```{r loadings-grouped-plot}
+anchor_vars <- all_loadings %>% 
+  filter(anchor) %>% 
+  select(anchor_var = item, bec, latent)
+
+loadings_clean <- all_loadings %>% 
+  # filter(loading >= 0.5) %>%
+  left_join(anchor_vars) %>% 
+  mutate(latent_labelled = case_when(anchor_var == "percentage_first_returns_above_2m" ~ "Canopy Cover",
+                                     anchor_var == "elev_cv" ~ "Structural Complexity",
+                                     T ~ "Height and Biomass")) %>%
+  left_join(keys$continuous, by = c("item" = "variable")) %>%
+  select(-divide_by,-unit) %>%
+  mutate(var_long = ifelse(is.na(var_long), item, var_long))
+
+reorder_df <- all_loadings %>%
+  left_join(keys$continuous, by = c("item" = "variable")) %>%
+  select(-divide_by,-unit) %>%
+  mutate(var_long = ifelse(is.na(var_long), item, var_long)) %>%
+  distinct(var_long) %>%
+  arrange(var_long) %>%
+  bind_cols(order = c(4,
+                      3,
+                      1,
+                      6,
+                      11,
+                      9,
+                      5,
+                      7,
+                      8,
+                      12,
+                      2,
+                      10,
+                      13)) %>%
+  arrange(order)
+
+loadings_clean_order <- left_join(loadings_clean, reorder_df) %>%
+  filter(loading >= 0.5)
+
+single_loads <- loadings_clean_order %>%
+  group_by(item, bec) %>%
+  filter(n() == 1)
+
+multi_loads <- loadings_clean_order %>%
+  group_by(item, bec) %>%
+  filter(n() != 1) %>%
+  group_by(bec) %>%
+  group_split()
+  
+grid_plot <- reorder_df %>%
+  crossing(bec = all_loadings %>% pull(bec))
+
+latent_plot <- ggplot(data = grid_plot, aes(x = fct_reorder(var_long, order, .desc = T), y = bec)) +
+  geom_tile(fill = "00000000") +
+  geom_tile(data = single_loads, aes(fill = latent_labelled), width = 0.9, height = 0.9)
+
+for (loading in multi_loads) {
+  latent_plot = latent_plot + 
+    geom_tile(data = loading, aes(fill = fct_rev(latent_labelled)),
+            width = 0.90, height = 0.9,
+            position = "dodge")
+}
+
+latent_dhis <- latent_plot +
+  scale_fill_discrete_c4a_cat(palette = "batlow", reverse = T) +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Latent Groups") +
+  coord_flip()
+# Exploratory factor analysis shows three groups of latent variables (Figure (x). We assigned the groups to latent variables indicating canopy cover / biomass metrics, canopy height / biomass metrics, and structural complexity metrics. We assigned the indicators to latent variable groups by examining anchors for each latent variable. The anchors were calculated by choosing the indicator variable with the largest difference between the maximum value in a given loading compared to to said indicators loadings in all other latent variables.
+#Bunchgrass, notably, has one latent variable. It covers all indicators, except for structural complexity. This is possibly due to the small amount of forests in the Bunchgrass BEC zone. CDF and CWH are the only BEC zones to include elevation standard deviation in their structural complexity latent variable. Notably, these two are both coastal BEC zones, with large trees and high energy availability. A structural complexity latent variable is only found in five BEC zones.
+
+ggsave(here::here("outputs", "latent_dhis.png"), plot = latent_dhis, device = "png")
+```
+
+
+```{r}
+latent_boxplot <- loadings_clean %>%
+  left_join(reorder_df) %>%
+  ggplot(aes(x = fct_reorder(var_long, order, .desc = T), y = loading, col = var_long)) +
+  geom_boxplot(outlier.alpha = 0) +
+  geom_point(position = position_jitter(width = .25, height = 0), alpha = 0.5) +
+  geom_hline(yintercept = 0.5, col = "red", linetype = "dashed") +
+  labs(x = "Latent Variables",
+       y = "Loadings",
+       col = NULL) +
+
+  facet_wrap(~latent_labelled) +
+  coord_flip() +
+  theme(legend.position = "bottom",
+        panel.grid = element_blank()) +
+  scale_color_discrete_c4a_cat(palette = "poly.dark24")
+  
+         # title = "Fig (x): Boxplots of latent variable loadings across BEC zones as determined by exploratory factor analysis. Red dashed lines show \nlatent variable indicator cutoff before being used as starting values for the SEM models.") +
+
+# Figure (x) shows boxplots of latent variable loadings from forest structure indicator variables. A maximum of three valid latent variables were identified across the sixteen BEC zones. We assigned indicators variables to latent variable groups by examining the anchoring variables for each latent variable. The anchoring variables were calculated by choosing the indicator variable with the largest difference between the maximum value in a given loading compared to said indicators loadings in all other latent variables.
+ggsave(here::here("outputs", "latent_boxplot.png"), plot = latent_boxplot, device = "png")
 ```
 
 ```{r}
-extracted_vlce %>%
-  st_drop_geometry() %>%
-  count(category)
+loadings_clean %>%
+  filter(loading >= 0.5) %>%
+  ggplot(aes(x = loading, y = latent_labelled, fill = var_long)) +
+  geom_col(position = "dodge") +
+  scale_color_discrete_c4a_cat(palette = "poly.dark24") +
+  facet_wrap(~bec)
+```
+
+
+```{r}
+num_latents <- all_loadings %>%
+  filter(loading >= 0.5) %>%
+  group_by(bec) %>%
+  count(latent) %>%
+  summarize(n = n())
+
+all_loadings %>%
+  filter(anchor)
+
+# check how many forest strcuture latent variables in each
+# are latent variables static or variable
+# see if anchors are static or variable
+
+
+loadings_filtered <- loadings %>%
+  filter(loading >= 0.5)
+
+bec_nest <- bec_normal %>% 
+  group_by(bec) %>% 
+  nest()
+
+for_esem <- all_loadings %>%
+  filter(loading >= 0.5)
+
+model_starts <- for_esem %>% 
+  distinct(bec, latent) %>% 
+  group_by(bec) %>% 
+  summarize(latents = paste0(latent, collapse = " + ")) %>%
+  mutate(model_start = glue::glue("CumDHI ~ {latents} \n VarDHI ~ {latents} \n MinDHI ~ {latents}")) %>%
+  select(!latents)
+
+bec_esem_syntax <- for_esem %>%
+  mutate(
+    loading = round(loading, 4),
+    syntax = ifelse(
+      anchor,
+      glue::glue("{loading}*{item}"),
+      glue::glue("start({loading})*{item}")
+    )
+  ) %>%
+  group_by(bec, latent) %>%
+  summarize(syntax = paste0(syntax, collapse = " + ")) %>%
+  mutate(syntax = glue::glue("{latent} =~ {syntax}")) %>%
+  summarize(syntax = paste0(syntax, collapse = " \n ")) %>%
+  left_join(model_starts) %>%
+  mutate(syntax = glue::glue("{model_start} \n {syntax}")) %>%
+  left_join(bec_nest) %>%
+  select(bec, data, syntax)
+
+bec_esems <- bec_esem_syntax %>% 
+  filter(bec != "IMA") %>%
+  mutate(out = map2(.x = syntax, .y = data, .f = sem))
 ```
 
 ```{r}
-fitmeasures %>% 
-  group_by(zone) %>%
-  dplyr::summarize(across(cfi:aic, mean))
 
-fitmeasures %>%
-  mutate(v_h = ifelse(model %in% h_models, "h", "v")) %>%
-  group_by(model) %>%
-  dplyr::summarize(across(c(cfi:aic, chisq), mean))
+
+esem_df <- loadings_filtered %>%
+  mutate(
+    anchor = case_when(
+      latent == "f1" & item == "elev_p95" ~ T,
+      latent == "f2" & item == "percentage_first_returns_above_2m" ~ T,
+      T ~ F
+    ),
+    syntax = ifelse(
+      anchor,
+      glue::glue("{loading}*{item}"),
+      glue::glue("start({loading})*{item}")
+    )
+  ) %>%
+  group_by(latent) %>%
+  summarize(esem = paste0(syntax, collapse = " + ")) %>%
+  mutate(latent = toupper(latent),
+         esem = glue::glue("{latent} =~ {esem}")) 
+esem_mod <- esem_df %>%
+  pull(esem) %>%
+  paste0(collapse = " \n ")
+
+dhi_esem <- paste0("CumDHI ~ elev_cv + F1 + F2
+        VarDHI ~ elev_cv + F1 + F2
+        MinDHI ~ elev_cv + F1 + F2
+       ",
+       esem_mod)
+
+dhi_esem_fit <- cfa(dhi_esem, data = bec_normal) 
+```
+
+
+
+
+```{r}
+cfa_syn <- "F1 =~ elev_p95 + elev_mean + elev_stddev + loreys_height
+            F2 =~ percentage_first_returns_above_2m + percentage_first_returns_above_mean
+            F3 =~ total_biomass + basal_area + gross_stem_volume"
+
+cfa_sem_syn <- "F1 =~ elev_p95 + elev_mean + elev_stddev + loreys_height
+            F2 =~ percentage_first_returns_above_2m + percentage_first_returns_above_mean
+            F3 =~ total_biomass + basal_area + gross_stem_volume
+            F4 =~ CumDHI + VarDHI + MinDHI
+            F4 ~ F1 + F2 + F3"
+
+
+cfa_fit <- cfa_syn %>%
+  cfa(data = bec_normal)
+
+cfa_sem_fit <- cfa_sem_syn %>%
+  sem(data = bec_normal)
+
+lavaanPlot(cfa_sem_fit,
+           coefs = T,
+           covs = T,
+           graph_options = list(layout = "circo"),
+           edge_options = list(color = "grey"))
 ```
 
 ```{r}
-params %>%
-  filter(op == "~") %>%
-  group_by(model, lhs, rhs) %>%
-  dplyr::summarize(per_sig = (pvalue > 0.05) / n()) %>%
-  view()
+one_latent_syn <- "F1 =~ elev_cv + total_biomass + elev_p95 + percentage_first_returns_above_2m
+CumDHI ~ F1
+VarDHI ~ F1
+MinDHI ~ F1"
+
+one_latent_fit <- sem(one_latent_syn, data = bec_normal)
+
+lavaanPlot(one_latent_fit,
+           coefs = T,
+           covs = T,
+           graph_options = list(layout = "circo"),
+           edge_options = list(color = "grey")
+           )
 ```
 
 ```{r}
-test_mod <- "CumDHI ~ loreys_height + percentage_first_returns_above_2m + percentage_first_returns_above_mean
-percentage_first_returns_above_2m ~ total_biomass
-percentage_first_returns_above_mean ~ percentage_first_returns_above_2m + total_biomass
-total_biomass ~ loreys_height"
+library(rdacca.hp)
 
-data <- dfs[[19]] %>%
-  mutate(across(basal_area:total_biomass, scale),
-         across(basal_area:total_biomass, as.numeric))
+rdacca.hp(bec_normal$CumDHI, 
+          bec_normal %>% select(basal_area:total_biomass))
 
-(egg <- sem(test_mod, data = data))
+rdacca.hp(bec_normal$VarDHI, 
+          bec_normal %>% select(basal_area:total_biomass))
 
-varTable(egg)
-fitmeasures(egg)
-parameterestimates(egg)
-
-graph_sem(egg)
+rdacca.hp(bec_normal$MinDHI, 
+          bec_normal %>% select(basal_area:total_biomass))
 ```
 
 ```{r}
-vlce_samples <- here::here("data", "samples", "vlce") %>%
-  list.files(full.names = T, pattern = ".shp$") %>%
-  map(read_sf) %>%
-  bind_rows()
+library(dplyr)
 
-vlce_samples
+data <- data.frame(data_id = c(letters[1:5], 
+                               letters[1:5]),
+                   data_group =  c(replicate(5, "Group1"),
+                                   replicate(5, "Group2")),
+                   data_value = c(0:4, replicate(5,2))) 
+
+data_unique <- data %>% ## non-overlapping data
+  group_by(data_id, data_value) %>%
+  filter(n() == 1)
+
+data_shared <- data %>% ## overlapping data
+  group_by(data_id, data_value) %>%
+  filter(n() != 1)
+
+ggplot(data,
+       aes(x = data_value, y = data_id)) + 
+  geom_tile(data = data_unique, aes(fill = data_group, group = data_group), 
+            width = 0.4, height = 0.8) + ## non-overlapping data
+  geom_tile(data = data_shared, aes(fill = data_group, group = data_group), 
+            width = 0.4, height = 0.8, 
+            position = "dodge") ## non-overlapping data
 ```
+
