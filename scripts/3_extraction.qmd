@@ -1,0 +1,110 @@
+---
+title: "3_data_extraction"
+format: html
+editor: visual
+---
+
+extract datasets
+
+```{r}
+bec_samples <- here::here("data", "samples", "bec") %>%
+  list.files(full.names = T, pattern = ".shp$") %>%
+  map(read_sf) %>%
+  bind_rows()
+
+vlce_samples <- here::here("data", "samples", "vlce") %>%
+  list.files(full.names = T, pattern = ".shp$") %>%
+  map(read_sf) %>%
+  bind_rows()
+```
+
+```{r}
+
+all_rasts_loc <- here::here("data", "rasts", "all_rasts_bec.dat")
+
+if (!file.exists(all_rasts_loc)) {
+  # bec_rast <- bec() %>%
+  #   rasterize(y = vlce, field = "ZONE") %>%
+  #   crop(bcb_rast) %>%
+  #   mask(bcb_rast)
+  # 
+  # names(bec_rast) <- "bec"
+  
+  struct_locs <- here::here("F://", "mosaiced", "structure")
+  struct_rasts <- list.files(
+    struct_locs,
+    recursive = T,
+    pattern = ".dat$",
+    full.names = T
+  ) %>%
+    map(rast) %>%
+    rast()
+  
+  struct_names <- str_split(sources(struct_rasts), pattern = "/") %>%
+    lapply("[[", 4) %>% # get fourth index from names
+    unlist()
+  
+  names(struct_rasts) <- struct_names
+  
+  struct_rasts <- struct_rasts %>%
+    crop(bcb_rast, mask = T)
+  
+  dhi_rasts <-
+    list.files(here::here("F://", "mosaiced", "DHI"),
+               pattern = "2010s.tif$",
+               full.names = T) %>%
+    map(rast) %>%
+    rast()
+  
+  dhi_names <- str_split(sources(dhi_rasts), pattern = "/") %>%
+    lapply("[[", 4) %>% # get fourth index from names
+    unlist() %>%
+    str_split(pattern = "[[:punct:]]") %>%
+    lapply("[[", 2) %>% # get second index from split names
+    unlist()
+  
+  names(dhi_rasts) <- dhi_names
+  
+  dhi_rasts <- dhi_rasts %>%
+    crop(bcb_rast, mask = T)
+  
+  # dhi_mm <- minmax(dhi_rasts)
+  #
+  # dhi_rasts_mm <- (dhi_rasts - dhi_mm[1,]) / (dhi_mm[2,] - dhi_mm[1,])
+  
+  all_rasts <- c(vlce, struct_rasts, dhi_rasts) %>%
+    mask(bcb_rast)
+  
+  writeRaster(
+    all_rasts,
+    all_rasts_loc,
+    overwrite = T,
+    filetype = "envi",
+    datatype = "FLT4S"
+  )
+}
+
+all_rasts <- rast(all_rasts_loc)
+
+bec_rast <- bec() %>%
+  rasterize(y = vlce, field = "ZONE") %>%
+  crop(bcb_rast) %>%
+  mask(bcb_rast)
+
+names(bec_rast) <- "bec"
+all_rasts <- c(bec_rast, vlce, all_rasts)
+```
+
+```{r}
+bec_sample_loc <- here::here("data", "samples", "bec_extracted.shp")
+vlce_sample_loc <- here::here("data", "samples", "vlce_extracted.shp")
+
+if (!file.exists(bec_sample_loc)) {
+  bec_samples_e <- extract(all_rasts, bec_samples, bind = T)
+  writeVector(bec_samples_e, bec_sample_loc, overwrite = T)
+}
+if (!file.exists(vlce_sample_loc)) {
+  vlce_samples_e <- extract(all_rasts, vlce_samples, bind = T)
+  writeVector(vlce_samples_e, vlce_sample_loc, overwrite = T)
+}
+```

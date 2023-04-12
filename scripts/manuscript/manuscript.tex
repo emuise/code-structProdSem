@@ -158,7 +158,7 @@
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
   pdftitle={Disentangling linkages between satellite derived forest structure and productivity across a range of forest types and ecosystems.},
-  pdfauthor={Evan R. Muise; Nicholas C. Coops; Txomin Hermosilla; A. Cole Burton; Margaret E. Andrew; Stephen S. Ban},
+  pdfauthor={Evan R. Muise; Margaret E. Andrew; Nicholas C. Coops; Txomin Hermosilla; A. Cole Burton; Stephen S. Ban},
   pdfkeywords={structural equation modelling, remote
 sensing, landsat, forest structure, forest productivity, dynamic habitat
 indices},
@@ -179,11 +179,15 @@ and productivity across a range of forest types and ecosystems.}
 \corref{cor1}%
 }
  \ead{evan.muise@student.ubc.ca} 
+\author[2]{Margaret E. Andrew%
+%
+}
+ \ead{M.Andrew@murdoch.edu.au} 
 \author[1]{Nicholas C. Coops%
 %
 }
  \ead{nicholas.coops@ubc.ca} 
-\author[2]{Txomin Hermosilla%
+\author[3]{Txomin Hermosilla%
 %
 }
  \ead{txomin.hermosillagomez@NRCan-RNCan.gc.ca} 
@@ -191,10 +195,6 @@ and productivity across a range of forest types and ecosystems.}
 %
 }
  \ead{cole.burton@ubc.ca} 
-\author[3]{Margaret E. Andrew%
-%
-}
- \ead{M.Andrew@murdoch.edu.au} 
 \author[4]{Stephen S. Ban%
 %
 }
@@ -203,12 +203,12 @@ and productivity across a range of forest types and ecosystems.}
 \affiliation[1]{organization={University of British Columbia, Forest
 Resources Management},addressline={2424 Main Mall},city={Vancouver, BC,
 Canada},postcode={V6T 1Z4},postcodesep={}}
-\affiliation[2]{organization={Natural Resources Canada, Canada Forest
-Service (Pacific Forestry Centre)},addressline={506 Burnside Rd
-W},city={Victoria, BC, Canada},postcode={V8Z 1M5},postcodesep={}}
-\affiliation[3]{organization={Murdoch University, Environmental and
+\affiliation[2]{organization={Murdoch University, Environmental and
 Conservation Sciences and Harry Butler Institute},city={Murdoch, WA,
 Australia},postcode={6150},postcodesep={}}
+\affiliation[3]{organization={Natural Resources Canada, Canada Forest
+Service (Pacific Forestry Centre)},addressline={506 Burnside Rd
+W},city={Victoria, BC, Canada},postcode={V8Z 1M5},postcodesep={}}
 \affiliation[4]{organization={Ministry of Environment and Climate Change
 Strategy, BC Parks},addressline={525 Superior Street},city={Victoria,
 BC, Canada},postcode={V8V 1T7},postcodesep={}}
@@ -238,7 +238,20 @@ productivity \sep
     dynamic habitat indices
 \end{keyword}
 \end{frontmatter}
-    \ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, frame hidden, breakable, enhanced, sharp corners]}{\end{tcolorbox}}\fi
+    \ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, interior hidden, borderline west={3pt}{0pt}{shadecolor}, frame hidden, sharp corners, enhanced, boxrule=0pt]}{\end{tcolorbox}}\fi
+
+\begin{verbatim}
+This is lavaan 0.6-14
+lavaan is FREE software! Please report any bugs.
+\end{verbatim}
+
+\begin{verbatim}
+terra 1.7.3
+\end{verbatim}
+
+\begin{verbatim}
+Linking to GEOS 3.9.3, GDAL 3.5.2, PROJ 8.2.1; sf_use_s2() is TRUE
+\end{verbatim}
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
@@ -254,53 +267,68 @@ Observation Network has developed the Essential Biodiversity Variables
 \citep[EBVs,][]{pereira2013}, designed as an analog to the Essential
 Climate Variables framework \citep{bojinski2014}. EBVs are designed to
 be global in scope, relevant to biodiversity information, feasible to
-utilize, and complementary to one another \citep{skidmore2021}.
+utilize, and complementary to one another \citep{skidmore2021}. There
+are six EBV classes, each of which correspond to a different facet of
+biodiversity including species populations, species traits, community
+composition, ecosystem structure, ecosystem function, and genetic
+composition \citep{pereira2013}.
 
-There are six EBV classes, each corresponding to a different facet of
-biodiversity, including, genetic composition, species populations,
-species traits, community composition, ecosystem structure, and
-ecosystem function \citep{pereira2013}. \citet{fernández2020} divides
-the six classes into two approaches, with one focusing on species
-biodiversity, and the other focusing on ecosystem diversity. Remote
-sensing has proven to be capable of measure five of the six classes,
-with the exception being genetic composition, which requires in-situ
-observation and samples \citep{skidmore2021}. Notably, while remote
-sensing can provide information on the remaining two species EBV
-classes, this information is typically acquired with an \emph{ad-hoc}
-approach requiring high spatial and spectral resolution data. This data
-can often only be collected at local extents, rather than the global or
-regional scales required for biodiversity trend assessment
-\citep{valdez2023}. Community composition falls into a similar dilemma,
-requiring species population information which necessitates high
-resolution spatial data.
+Satellite remote sensing has proven to be capable of measuring five of
+the six classes, with the exception being genetic composition, which
+requires in-situ observation and sampling \citep{skidmore2021}. Species
+populations - and in turn community composition - can be assessed with
+very-high-resolution imagery to identify tree species at the tree-crown
+scale, however it is difficult and computationally expensive to extend
+these analyses to broader extents \citep{fassnacht2016, graves2016}.
+Species traits such as phenology have been on a single-tree scale using
+PlanetScope imagery and drone-based measurements \citep{wu2021}. Coarser
+measurements, such as those taken by the MODIS \citep{zhang2003},
+Landsat \citep{fisher2006}, or Sentinel
+\citep{helfenstein2022, darvishzadeh2019} series of satellites can
+monitor these functional processes at larger extents, corresponding to
+ecosystem function, but the coarse spatial resolution removes the
+ability to relate these traits to individual trees. Remote sensing data
+has been shown to be effective at monitoring ecosystem structure at
+regional to global extents through the use of optical imagery
+\citep{cohen2004} and lidar datasets
+\citep{lefsky2002, lang2021, neuenschwander2019}.
 
-The remaining two classes, ecosystem structure and function, are
-incredibly well suited to be examined at global or regional scales using
-mid-resolution satellite imagery, such as that provided by the Landsat
-series of satellites. Advances in satellite remote sensing processing
-have allowed 3d forest structure data to be imputed across wide spatial
-scales \citep{matasci2018, coops2021} using data fusion approaches
-involving collected lidar data and optical/radar data. Other advances in
-image compositing have allowed yearly summaries of vegetation
-productivity to be calculated at regional to global scales, summarizing
-the yearly energy totals, minimums, and variations \citep{radeloff2019}.
-These datasets correspond quite well with the EBV classes ecosystem
-structure (forest structural diversity metrics), and ecosystem function
-(forest productivity metrics).
+Notably, while remote sensing can provide information on the
+species-level EBVs, this information is typically acquired with an
+\emph{ad-hoc} approach requiring high spatial and spectral resolution
+data \citep{skidmore2021}. This data can often only be collected at
+small extents, rather than the global or regional scales required for
+biodiversity trend assessment \citep{valdez2023}. The two
+landscape-level EBVs (ecosystem structure and function) are well suited
+to be examined at global or regional scales using moderate-resolution
+satellite imagery, such as those provided by the Landsat or Sentinel
+series of satellites \citep{skidmore2021}.
+
+Simple metrics to complex for structure.
 
 Forest structural diversity has been linked to biodiversity at various
 scales \citep{guo2017, bergen2009, gao2014}. Increased structural
 complexity is hypothesized to create additional niches, leading to
-increased species diversity \citep{bergen2009}. The relationship between
-forest structure and biodiversity is commonly assessed using avian
-species diversity metrics \citep{macarthur1961, goetz2007}, however,
-other clades (and habitats), have also been used
-\citep{davies2014, nelson2005}. Many metrics derived from lidar remote
-sensing have been used as local indicators of biodiversity, including
-canopy cover, canopy height, vertical profiles, and aboveground biomass,
-while other 2nd order derived metrics such as canopy texture, height
-class distribution, edges, and patch metrics have been used to examine
-habitat and biodiversity at landscape scales \citep{bergen2009}.
+increased species diversity \citep{bergen2009}, which has been
+frequently demonstrated using avian species diversity metrics
+\citep{macarthur1961}. For example: \citet{herniman2020} used spectral
+and lidar derived forest structure data to model avian habitat
+suitability; \citet{clawges2008} found that lidar derived forest
+structural attributes are capable of identifying habitat types
+associated with avian species in pine/aspen forests; \citet{goetz2007}
+used canopy structural diversity to predict bird species richness,
+finding that canopy vertical distribution was the strongest predictor of
+species richness. Forest structural metrics have also been used to study
+other clades and habitats \citep{davies2014, nelson2005}. Many metrics
+derived from lidar remote sensing have been used as local indicators of
+biodiversity, including simple metrics such as canopy cover and canopy
+height as well as derived metrics including vertical profiles,
+aboveground biomass \citep{lefsky1999}. Other second order derived
+metrics such as canopy texture, height class distribution, edges, and
+patch metrics have also been used to examine habitat and biodiversity at
+landscape scales \citep{bergen2009}.
+
+Simple productivity (NDVI, indices) to complex aggregates (DHIs)
 
 The dynamic habitat indices (DHIs) are indicators of productivity
 calculated by summarizing vegetation indices over the course of one (or
@@ -325,57 +353,63 @@ year, corresponds to the environmental stability hypothesis which states
 that lower energy variation throughout a year will lead to increased
 species richness \citep{williams2008}.
 
-Some vegetation structure metrics are simpler, and more accurate, to
-calculate than others \citep{coops2021}. These basic metrics, such as
-canopy height and canopy cover, can then be used to estimate additional
-structure metrics, such as basal area or total biomass. Canopy height
-and cover are commonly used as indicators of vertical and horizontal
-variation, respectively. Recently, more attention has been paid to
-internal structural complexity metrics, which can be more difficult and
-time consuming to generate \citep{coops2021, ma2022}, but have been
-shown to have stronger linkages with biodiversity \citep{guo2017}, and
-productivity \citep{ali2019}.
+Biodiversity has been shown to be linked to both forest structure
+\citep{guo2017, gao2014}, and productivity \citep{radeloff2019} at a
+range of scales. Research has highlighted that the relationship between
+productivity and biodiversity is reciprocal \citep{worm2003}, making
+productivity a suitable biodiversity indicator. Within a forest
+environment, there are many possible ecosystem structure and function
+metrics that can be assessed. Structural variables range in complexity
+from simple (canopy cover; canopy height), to more complex (elevation
+coefficient of variation; elevation standard deviation) to modelled
+(aboveground biomass; basal area), all of which can be assessed using
+lidar data \citep{coops2021}. Data on ecosystem functionality ranges
+from phenology metrics (date of leaf on/leaf off; length of growing
+season) to functional traits (chlorophyll content; leaf area index) to
+productivity estimates (GPP; total available energy)
+\citep{pettorelli2018}. Advances in satellite remote sensing processing
+have allowed 3d forest structure data to be imputed across wide spatial
+scales \citep{matasci2018, coops2021} using data fusion approaches
+involving collected lidar data and optical/radar data. Other advances in
+image compositing have allowed yearly summaries of vegetation
+productivity to be calculated at regional to global scales, summarizing
+the yearly total, minimum, and variation in energy availability at
+similar spatial resolutions \citep{radeloff2019}.
 
-Linkages between forest structure and productivity (namely, vegetation
-indices) have been examined for nearly 20 years \citetext{\citealp[
-\citet{knyazikhin1998}]{huete2002}; \citealp{myneni1994}}. While there
-is significant theoretical and empirical evidence for their relationship
-at single time points (within a single image) \citep{myneni1994},
-various relationship directions and shapes have been found between
-forest structure and productivity metrics \citep{ali2019}. These
-relationships, their shapes, and their strengths have been attributed to
-multiple possible hypotheses and have been shown to vary based on
-environmental conditions \citep{ali2019}. The relationship between
-forest structural diversity metrics and annual productivity summaries
-has yet to be fully examined, including the DHIs.
+In forested ecosystems, stand structural attributes have also been shown
+to influence productivity, with a range of responses dependent on
+environmental conditions \citep{ali2019}. Linkages between forest
+structure and productivity (namely, vegetation indices) have been
+examined for nearly 20 years
+\citetext{\citealp[\citet{knyazikhin1998}]{huete2002}; \citealp{myneni1994}}.
+While there is significant theoretical and empirical evidence for their
+relationship at single time points (within a single image)
+\citep{myneni1994}, various relationship directions and shapes have been
+found between forest structure and productivity metrics \citep{ali2019}.
+These relationships, their shapes, and their strengths have been
+attributed to multiple possible hypotheses and have been shown to vary
+based on environmental conditions \citep{ali2019}. The relationship
+between forest structural diversity metrics and annual productivity
+summaries has yet to be fully examined, including the DHIs.
 
 Understanding the complementarity between potential EBVs is an integral
-component of their creation \citep{skidmore2021}. Biodiversity has been
-shown to be linked to both forest structure \citep{guo2017, gao2014},
-and productivity \citep{radeloff2019} at a range of scales. Research has
-highlighted that the relationship between productivity and biodiversity
-is reciprocal \citep{worm2003}, making productivity a suitable
-biodiversity indicator. In forested ecosystems, stand structural
-attributes have also been shown to influence productivity, with a range
-of responses dependent on environmental conditions \citep{ali2019}.
-
-Structural equation modelling and path analyses have been commonly used
-in ecology to assess the causal effects behind various hypotheses
-\citep{fan2016, grace2010}, including the relationship between forest
-structure, functioning, and biodiversity \citep{ali2019} . In this paper
-we seek to untangle the relationship between two EBVs: forest structure
-diversity metrics and yearly summaries of forest productivity. To
-accomplish this, we assess this relationship using path analysis to
-assess the direct and indirect (as mediated by more complex forest
-structural diversity metrics) effects of commonly collected forest
-structural metrics (canopy height and canopy cover) on yearly
-productivity summaries. Further, we use exploratory structural equation
-modelling (ESEM) to identify the latent variables driving the
-productivity metrics. We run this analysis both globally, and stratified
-by the forested ecosystems of British Columbia, Canada, and compare
-models using AIC scores and global fit measures across the ecosystems.
-The results from this study will assess the linkages and complementarity
-between two biodiversity indicators.
+component of their creation \citep{skidmore2021}. Structural equation
+modelling and path analyses have been commonly used in ecology to assess
+the causal effects behind various hypotheses \citep{fan2016, grace2010},
+including the relationship between forest structure, functioning, and
+biodiversity \citep{ali2019}. In this paper we seek to untangle the
+relationship between two EBVs: forest structure diversity metrics and
+yearly summaries of forest productivity. To accomplish this, we assess
+this relationship using path analysis to assess the direct and indirect
+(as mediated by more complex forest structural diversity metrics)
+effects of commonly collected forest structural metrics (canopy height
+and canopy cover) on yearly productivity summaries. Further, we use
+exploratory structural equation modelling (ESEM) to identify the latent
+variables driving the productivity metrics. We run this analysis both
+globally, and stratified by the forested ecosystems of British Columbia,
+Canada, and compare models using AIC scores and global fit measures
+across the ecosystems. The results from this study will assess the
+linkages and complementarity between two biodiversity indicators.
 
 \hypertarget{methods}{%
 \section{Methods}\label{methods}}
@@ -428,33 +462,13 @@ have a forested land cover class (coniferous, deciduous, mixed-wood, or
 wetland-treed), and be surrounded by the same land cover class.
 Additionally, each pixel had to have a coefficient of variation less
 than 0.5 in the Lorey's height and canopy cover forest structural
-metrics. These focal analyses were preprocessed in R and Python, and
-randomly sampled across a masked suitability raster for each BEC zone
-using the \emph{sgsR} R package version 1.3.4 \citep{goodbody2023}. A
-maximum of 3000 samples were taken from each BEC zone.
+metrics. A maximum of 3000 samples were sampled in each BEC zone.
 
-{[}note to ncc; I've stopped doing this sampling step as Meg said she
-didn't feel it was necessary{]}
-
-The imputation method used to generate the forest structure layers leads
-to many duplicated values as there are a limited number of samples to
-predict from \citep{matasci2018}. A discussion of imputation approaches
-to large area lidar attribute modelling can be found in
-\citet{coops2021}. To account for duplicated input values in our
-modelling we averaged the endogenous variables within each ecosystem for
-each uniquely imputed set of forest attributes, forest type, and
-ecosystem. Due to variations in ecosystem size, differing numbers of
-samples were generated for each ecosystem. To account for this during
-model comparison, each ecosystem and land cover sample set was
-downsampled to the minimum number of samples for a single BEC zone (in
-this case, 170). For the forest type models, we attempted to select
-equal numbers of observations from each BEC zone. However, some forest
-types are rarely found in certain zones. To account for this, if an
-equal number of samples from each BEC zone were not available, the
-entire sample from that zone was taken. The amount of samples taken from
-other zones was then increased in order to collect a total number equal
-to the minimum number of samples in a single BEC zones (170). To meet
-the normality assumptions of path analysis, all variables were
+Due to variations in ecosystem size, differing numbers of samples were
+generated for each ecosystem. To account for this during model
+comparison, each ecosystem and land cover sample set was downsampled to
+the minimum number of samples for a single BEC zone (in this case, 170).
+To meet the normality assumptions of path analysis, all variables were
 natural-log transformed and standardized, as per \citet{grace2016}.
 Variables containing zeros were natural-log plus one transformed.
 
@@ -520,6 +534,19 @@ DHIs. If a forest structural attribute did not end up in a latent
 variable, it was included in the structural equation model as a DHI
 predictor, without a latent variable as a mediator.
 
+\hypertarget{software}{%
+\subsection{Software}\label{software}}
+
+The processing for this paper was done in R version 4.2.2
+\citep{R-base}. We used \emph{sgsR} \citep{goodbody2023} for sampling,
+\emph{terra} \citep{R-terra} for raster analyses, \emph{sf} for vector
+analyses \citep{R-sf}, and \emph{lavaan} \citep{lavaan2012} for path
+analysis and structural equation modelling.
+
+These focal analyses were preprocessed in R and Python, and randomly
+sampled across a masked suitability raster for each BEC zone using the
+\emph{sgsR} R package version 1.3.4 \citep{goodbody2023}.
+
 \hypertarget{results}{%
 \section{Results}\label{results}}
 
@@ -572,7 +599,7 @@ only have 0 as mindhi (makes sense, they are in the alpine).
 
 \begin{figure}
 
-{\centering \includegraphics[width=14.74in,height=\textheight]{../../outputs/latent_groups.png}
+{\centering \includegraphics[width=7in,height=\textheight]{../../outputs/latent_groups.png}
 
 }
 
@@ -667,7 +694,7 @@ email if I can get it working.
 
 
 \renewcommand\refname{References}
-  \bibliography{bibliography.bib}
+  \bibliography{bibliography.bib,packages.bib}
 
 
 \end{document}
