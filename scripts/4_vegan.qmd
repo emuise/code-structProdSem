@@ -6,6 +6,11 @@ editor: visual
 
 ```{r packages}
 library("vegan")
+library("tidyverse")
+library("cols4all")
+library(terra)
+library(sf)
+source(here::here("scripts", "get_keys.R"))
 ```
 
 ```{r normal-fun}
@@ -27,6 +32,15 @@ normal <- function(data) {
     scale() %>%
     as.numeric()
 }
+
+
+```
+
+```{r theme}
+my_theme <- theme_bw() +
+  theme(panel.grid = element_blank())
+
+theme_set(my_theme)
 ```
 
 ```{r data-prep}
@@ -85,6 +99,12 @@ to_rda <- bec_normal %>%
          -percentage_first_returns_above_mean,
          -elev_stddev)
 
+to_rda <- bec_normal %>% 
+  group_by(category) %>% 
+  slice_sample(n = 3000)  %>% 
+  filter(category == "Mixed Wood") %>% 
+  ungroup()
+
 dhi_tab <- to_rda %>%
   select(ends_with("DHI"))
 
@@ -107,11 +127,20 @@ rda_out <-
       basal_area + gross_stem_volume + loreys_height + total_biomass, # modelled
       data = to_rda)
 
-rda_out
-
 ordiplot(rda_out, choices = c(1, 2))
 
-rda_eig <- rda_out$CCA$eig
+rda_sum <- summary(rda_out)
+
+var_exp <- rda_sum$constr.chi / rda_sum$tot.chi
+
+rda_eig <- rda_out$CCA$eig %>%
+  as.data.frame() %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble() %>%
+  pivot_longer(cols = everything()) %>%
+  mutate(prop = value / sum(value),
+         var_exp = prop * var_exp)
 
 # scores(rda_out, choices = c(1:3))$species
 # scores(rda_out, choices = c(1:3))$biplot
@@ -119,17 +148,18 @@ rda_eig <- rda_out$CCA$eig
 
 summary(rda_out)$sites %>% 
   as.data.frame() %>% 
-  select(RDA1) %>% 
+  select(RDA1:RDA3) %>% 
   bind_cols(to_rda) %>%
   select(-bec, -category) %>% 
   cor() %>%
   as.data.frame() %>%
-  select(RDA1) %>%
-  arrange(desc(abs(RDA1)))
+  select(RDA1:RDA3) %>%
+  arrange(desc(abs(RDA1))) %>%
+  filter(!(startsWith(row.names(.), "RDA")))
 
 var_out <- varpart(dhi_tab, extracted, modelled)
 
-varpart_out %>% 
+var_out %>% 
   plot(Xnames = c("Derived", "Modelled"))
 
 path_r2 <- var_out$part$indfract %>%
@@ -171,7 +201,17 @@ to_nest <- bec_normal
 bec_nested <- to_nest %>%
   group_by(bec) %>%
   nest() %>%
-  ungroup()
+  ungroup() %>%
+  rename(strata = bec)
+
+class_nested <- to_nest %>%
+  group_by(category) %>%
+  slice_sample(n = 3000) %>%
+  nest() %>% 
+  ungroup() %>%
+  rename(strata = category)
+
+strata_nested <- bind_rows(bec_nested, class_nested)
 ```
 
 ```{r rda-var-funs}
@@ -207,9 +247,9 @@ my_var_fun <- function(tibble) {
 ```
 
 ```{r rda-var-bec}
-outs <- bec_nested %>%
-  mutate(rda = map(data, my_rda_fun),
-         var = map(data, my_var_fun)) 
+outs <- strata_nested %>%
+  mutate(rda = map(data, my_rda_fun, .progress = "RDA"),
+         var = map(data, my_var_fun, .progress = "VAR")) 
 ```
 
 ```{r fracts-out}
@@ -224,16 +264,23 @@ fracts_out <- outs %>%
     )) %>%
   unnest(indfracts) %>%
   arrange(desc(residual)) %>%
-  select(bec, extracted, modelled, overlap) %>%
+  select(strata, extracted, modelled, overlap) %>%
   pivot_longer(c(extracted, modelled, overlap)) %>%
   mutate(value = ifelse(value > 0, value, 0)) %>%
   pivot_wider()
+
+fracts_out %>% 
+  mutate(total = extracted + modelled + overlap) %>%
+  arrange(strata %in% (bec_normal %>%
+           pull(category) %>%
+           unique()),
+          desc(total))
 ```
 
 ```{r raincloud-plot}
 library(ggdist)
 fracts_out %>%
-  left_join(keys$bec, by = c("bec" = "zone")) %>%
+  #left_join(keys$bec, by = c("bec" = "zone")) %>%
   pivot_longer(extracted:overlap) %>%
   mutate(name = str_to_title(name)) %>%
   mutate(value = ifelse(value < 0, 0, value)) %>%
@@ -261,7 +308,7 @@ fracts_out %>%
     # adjust grouping (binning) of observations
     binwidth = 0.0025,
     #position = "stack",
-    aes(fill = group, col = group),
+    # aes(fill = group, col = group),
     alpha = 0.5
   ) +
 
@@ -341,7 +388,6 @@ path_base +
   labs(title = paste(var_oi, collapse = " "))
 ```
 
-
 ```{r group-climate-spatial}
 climate_folder <- here::here("data", "climate")
 
@@ -403,7 +449,9 @@ fracts_out %>%
   ggplot(aes(x = mean, y = value)) +
   geom_point() +
   geom_smooth(method = "lm") + 
-  facet_wrap(~name) 
+  facet_wrap(~name) +
+  theme_bw() +
+  theme(panel.grid = element_blank())
 ```
 
 ```{r testing-idf-live}
@@ -481,17 +529,13 @@ bec_df %>%
   scale_fill_discrete_c4a_cat(palette = "batlow")
 ```
 
-
-
-
-
 ```{r cdf-anova}
 outs %>% 
-  filter(bec == "CDF") %>%
+  filter(bec == "IDF") %>%
   select(rda) %>% 
   pull(rda) %>%
   .[[1]] %>%
-  anova()
+  anova(by = "axis")
 ```
 
 ```{r cum-min-hexplot}
@@ -504,15 +548,27 @@ bec_df %>%
 ```
 
 ```{r eig-anova}
-outs %>%
-  mutate(eig = map(rda, .f = function(rda) {
-    rda$CCA$eig
-  })) %>%
-  unnest_wider(eig) %>%
-  mutate(prop21 = RDA1/RDA2) %>%
-  arrange(desc(prop21)) %>%
-  left_join(anova_a2) %>%
-  select(bec, RDA1:sig)
+eig_outs <- outs %>%
+  mutate(eig = map(
+    rda,
+    .f = function(rda) {
+      rda_sum <- summary(rda)
+      
+      var_exp <- rda_sum$constr.chi / rda_sum$tot.chi
+      
+      rda_eig <- rda$CCA$eig %>%
+        as.data.frame() %>%
+        t() %>%
+        as.data.frame() %>%
+        tibble() %>%
+        pivot_longer(cols = everything(), names_to = "axis",
+                     values_to = "eigenvalue") %>%
+        mutate(prop = eigenvalue / sum(eigenvalue),
+               var_exp = prop * var_exp)
+    }
+  )) %>%
+  unnest(eig) %>%
+  select(strata, axis:var_exp)
 
 anova_outs <- outs %>%
   mutate(
@@ -530,12 +586,37 @@ anova_outs <- outs %>%
           labels = c("***", "**", "*", ".", "NS")))  %>%
         mutate(axis = paste0("RDA", row_number())) %>%
         relocate(axis)
-  }))
+  }, .progress = "anovas"))
 
 anova_sig_axes <- anova_outs %>%
   select(bec, anova) %>%
-  unnest(cols = anova) %>%
-  filter(anova_sig != "NS")
+  unnest(cols = anova) # %>%
+  # filter(anova_sig != "NS")
+
+axis_varexp <- anova_sig_axes %>%
+  inner_join(eig_outs)
+
+axis_varexp %>%
+  left_join(keys$bec, by = c("bec" = "zone")) %>%
+  ggplot(aes(x = axis, y = var_exp, col = axis)) +
+  geom_jitter(height = 0, width = 0.05) +
+  theme(legend.position = "bottom") +
+  labs(x = NULL,
+       y = "% of Variance Explained",
+       col = NULL) +
+  scale_y_continuous(labels = scales::label_percent())
+# no secondary axis in alpine & coast.
+
+axis_varexp %>%
+  group_by(bec) %>%
+  # filter(n() == 2) %>%
+  select(bec, axis, var_exp) %>% 
+  pivot_wider(names_from = axis,
+              values_from = var_exp) %>%
+  mutate(ratio = RDA1 / RDA2)
+
+# smaller ratios present when the RDA1 doesn't explain much. when variance explained
+# is low, the ratio is low. this is because there isn't much variance explained
 ```
 
 ```{r bec-loadings}
@@ -579,24 +660,135 @@ out_loadings <- outs %>%
 ```
 
 ```{r}
-out_loadings %>% 
-  mutate(axis_sig = cut(
+sig_loads <- out_loadings %>% 
+  mutate(loading_sig = cut(
           axis_p,
           breaks = c(0, 0.001, 0.01, 0.05, .10, 1),
           labels = c("***", "**", "*", ".", "NS"),
           right = F)) %>%
   inner_join(anova_sig_axes) %>%
   #filter(axis_sig == "NS") %>%
-  arrange(axis_loading) %>%
-  count(var)
+  arrange(desc(abs(axis_loading))) %>%
+  filter(!(var %in% c("percentage_first_returns_above_mean", 
+                    "elev_mean", 
+                    "elev_stddev"))) %>%
+  drop_na()# removes ima mindhi which has no variance
+
+sig_loads %>%
+  filter(endsWith(var, "DHI"),
+         axis == "RDA2") %>%
+  arrange(bec) %>%
+  select(bec, var, axis_loading) %>%
+  pivot_wider(names_from = var,
+              values_from = axis_loading)
+# when a second axis is present, it has a weak loading on the cumulative DHI
+# while the majoirty of the variability is contained within all three DHIs together, the second axis, when present, is more linked to the minmimum and variation DHI.
+
+sig_loads %>%
+  select(bec, var, axis, axis_loading, loading_sig) %>%
+  filter(endsWith(var, "DHI")) %>%
+  ggplot(aes(x = var, y = axis_loading, group = bec)) +
+  geom_point(aes(col = bec)) +
+  geom_line(aes(col = bec), alpha = 0.5, lty = "dashed") +
+  geom_hline(yintercept = 0, col = "red", alpha = 0.2) +
+  facet_wrap(~axis) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x = NULL,
+       y = "Axis Loading")
+
+sig_loads %>%
+  select(bec, var, axis, axis_loading) %>%
+  filter(!endsWith(var, "DHI")) %>%
+  left_join(keys$continuous, by = c("var" = "variable")) %>%
+  ggplot(aes(x = var_long, y = abs(axis_loading), group = bec)) +
+  geom_point(aes(col = bec)) +
+  geom_line(aes(col = bec), alpha = 0.5, lty = "dashed") +
+  geom_hline(yintercept = 0, col = "red", alpha = 0.2) +
+  facet_wrap(~axis) +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading (Absolute Value)")
+
+sig_loads %>%
+  filter(!endsWith(var, "DHI"),
+         loading_sig != "NS") %>%
+  group_by(bec, axis) %>%
+  mutate(loading_rank = data.table::frankv(abs(axis_loading), 
+                                           order = -1)) %>%
+  ggplot(aes(x = fct_reorder(var, loading_rank),
+             y = loading_rank, col = bec)) +
+  geom_jitter(height = 0) +
+  facet_wrap(~axis) +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading Rank")
 
 # need to remove the correlations for variables that arent actually involved
 # percentage_first_returns_above_mean, elev_mean, elev_stddev
 out_loadings %>% count(var)
 ```
 
+```{r jenkies}
+library(rgeoda)
+sig_loads_f <- sig_loads %>%
+  filter(!endsWith(var, "DHI"),
+         loading_sig != "NS")
 
-need to get significant axes from the anova and then filter this
+jenkies <- sig_loads_f %>%
+  mutate(axis_loading = abs(axis_loading)) %>%
+  group_by(bec, axis) %>%
+  select(bec, axis, axis_loading) %>%
+  nest() %>%
+  mutate(breaks = map(data, natural_breaks, k = 2)) %>%
+  unnest(breaks) %>%
+  select(-data)
+
+sig_loads_f %>%
+  ggplot(aes(x = bec, y = abs(axis_loading))) +
+  facet_wrap(~axis) +
+  geom_point(data = jenkies, aes(y = breaks), col = "red", size = 3) +
+  geom_point(aes(shape = var))
+
+sig_loads_f %>%
+  left_join(jenkies) %>%
+  mutate(strong = abs(axis_loading) > breaks) %>%
+  ggplot(aes(x = bec, y = var)) +
+  geom_tile(aes(fill = strong, alpha = abs(axis_loading)))
+  geom_point(aes(col = strong))
+  left_join(keys$bec, by = c("bec" = "zone")) %>%
+  group_by(var) %>%
+  summarize(per_strong = sum(strong) / n()) 
+
+
+
+# We identified large contributors to each axis using a thresholding process. The threshold for each BEC zone and significant RDA axis was determined by using the Jenks natural breaks optimization method with k = 2 on significant loadings. We then summarized the most common large contributors across BEC zones and our BEC groupings.
+```
+
+```{r cutoffs}
+for_cutoff_plot <- sig_loads_f %>%
+  select(bec, axis, var, axis_loading) %>%
+  crossing(cutoff = seq(0, 1, 0.01)) %>%
+  mutate(over_cut = abs(axis_loading) > cutoff) %>%
+  group_by(var, cutoff) %>%
+  summarize(prop_over_cut = sum(over_cut) / n())
+
+for_cutoff_plot %>%
+  left_join(keys$continuous, by = c("var" = "variable")) %>%
+  ggplot(aes(x = cutoff, y = prop_over_cut, col = var_long)) +
+  geom_line() +
+  theme(legend.position = c(0.8, 0.6)) +
+  labs(x = "Cutoff Value",
+       y = "Proportion of loadings above cutoff",
+       col = "Variable") +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_color_discrete_c4a_cat(palette = "met.tsimshian") +
+  geom_vline(xintercept = c(0.2, 0.25, 0.3), col = "red", lty = "dashed")
+```
+
+calculate the actual variance explained
 
 get total rda eigenvalues. find proportion of total for each rda. multiple by 1 - residual. and thats gets path number b/w RD1/RD2 and DHIs. can just filter each by which exist since only a few. goes for path plot
 

@@ -116,22 +116,24 @@ populations, species traits, community composition, ecosystem structure,
 ecosystem function, and genetic composition [@pereira2013].
 
 Satellite remote sensing has proven to be capable of measuring five of
-the six classes, with the exception being genetic composition, which
+the six EBV classes, the exception being genetic composition, which
 requires in-situ observation and sampling [@skidmore2021]. Species
 populations - and in turn community composition - can be assessed with
 very-high-resolution imagery to identify tree species at the tree-crown
 scale, however it is difficult and computationally expensive to extend
-these analyses to broader extents [@fassnacht2016; @graves2016]. Species
-traits such as phenology have been on a single-tree scale using
-PlanetScope imagery and drone-based measurements [@wu2021]. Coarser
-measurements, such as those taken by the MODIS [@zhang2003], Landsat
-[@fisher2006], or Sentinel [@helfenstein2022; @darvishzadeh2019] series
-of satellites can monitor these functional processes at larger extents,
-corresponding to ecosystem function, but the coarse spatial resolution
-removes the ability to relate these traits to individual trees. Remote
-sensing data has been shown to be effective at monitoring ecosystem
-structure at regional to global extents through the use of optical
-imagery [@cohen2004] and lidar datasets [@lefsky2002; @lang2021;
+these analyses to broader extents [@fassnacht2016; @graves2016] while
+species traits such as vegetation phenology have been observed at the
+single-tree scale using, for example, PlanetScope imagery and
+drone-based measurements [@wu2021]. Coarser spatial measurements, such
+as those taken from satellites by the MODIS [@zhang2003], Landsat
+imaging systems[@fisher2006], or Sentinel [@helfenstein2022;
+@darvishzadeh2019] can monitor these functional processes at broader
+extents, corresponding to ecosystem function, but the coarse spatial
+resolution removes the ability to relate these traits to individual
+trees. Remote sensing data has been shown to be arguably the most
+effective at monitoring ecosystem structure and function at regional to
+global extents through the use of optical imagery [@cohen2004] and
+active sensors such as lidar and radar datasets [@lefsky2002; @lang2021;
 @neuenschwander2019].
 
 Notably, while remote sensing can provide information on the
@@ -166,73 +168,67 @@ that canopy vertical distribution was the strongest predictor of species
 richness. Forest structural metrics have also been used to study
 biodiversity in other clades as well [@davies2014; @nelson2005].
 
-Energy availability in an ecosystem has also been shown to be a
-predictor of species richness and abundances at various scales
-[@chase2002; @radeloff2019; @coops2019; @razenkova], and is measurable
-using satellite remote sensing via the use of various vegetation indices
-[@huete2002; @radeloff2019]. Vegetation indices, which are indicative of
-photosynthetic activity, are commonly used as proxies of gross primary
-productivity [@huang2019]. These vegetation indices have also been used
-to assess patterns in biodiversity at single time points [@bonn2004],
-and more recently, through yearly summaries of productivity
-[@radeloff2019].
-
-The relationship between energy availability and biodiversity is
-proposed to function through various hypotheses, such as the available
-energy hypothesis, the environmental stress hypothesis, and the
-environmental stability hypothesis. These three hypotheses have in turn
-been linked to patterns of surface reflectance in remote sensing data
-[@radeloff2019]. The Dynamic Habitat Indices (DHIs) have been shown to
-be well suited to assess these hypotheses. The cumulative DHI calculates
-the total amount of energy available in a given pixel over the course of
-a year. Cumulative DHI is strongly linked to the available energy
-hypothesis, which suggests that with greater available energy species
-richness will increase [@wright1983]. The minimum DHI, which calculates
-the lowest productivity over the course of a year can be matched to the
-environmental stress hypothesis, which proposes that higher levels of
-minimum available energy will lead to higher species richness
-[@currie2004]. Finally, the variation DHI, which calculates the
+With respect to ecosystem function, energy availability in an ecosystem
+has shown to be a predictor of species richness and abundances at
+various scales [@chase2002; @radeloff2019; @coops2019; @razenkova], and
+is measurable using satellite remote sensing via the use of various
+vegetation indices [@huete2002; @radeloff2019]. Vegetation indices,
+which are indicative of photosynthetic activity, are commonly used as
+proxies of gross primary productivity [@huang2019]. These vegetation
+indices have also been used to assess patterns in biodiversity at single
+time points [@bonn2004], and more recently, through yearly summaries of
+productivity [@radeloff2019]. The relationship between energy
+availability and biodiversity occurs via various hypotheses, such as the
+available energy hypothesis, the environmental stress hypothesis, and
+the environmental stability hypothesis. These three hypotheses have in
+turn been linked to patterns of surface reflectance in remote sensing
+data [@radeloff2019]. The Dynamic Habitat Indices (DHIs) have been shown
+to be well suited to assess these hypotheses. The cumulative DHI
+calculates the total amount of energy available in a given pixel over
+the course of a year. Cumulative DHI is strongly linked to the available
+energy hypothesis, which suggests that with greater available energy
+species richness will increase [@wright1983]. The minimum DHI, which
+calculates the lowest productivity over the course of a year can be
+matched to the environmental stress hypothesis, which proposes that
+higher levels of minimum available energy will lead to higher species
+richness [@currie2004]. Finally, the variation DHI, which calculates the
 coefficient of variance in a vegetation index through the course of a
 year, corresponds to the environmental stability hypothesis which states
 that lower energy variation throughout a year will lead to increased
 species richness [@williams2008].
 
-Biodiversity has been shown to be linked to both forest structure
-[@guo2017; @gao2014], and productivity [@radeloff2019] at a range of
-scales. Research has highlighted that the relationship between
-productivity and biodiversity is reciprocal [@worm2003], making
-productivity a suitable biodiversity indicator. Within a forest
-environment, there are many possible ecosystem structure and function
-metrics that can be assessed. Structural variables range in complexity
-from simple (canopy cover; canopy height), to more complex (elevation
-coefficient of variation; elevation standard deviation) to modelled
-(aboveground biomass; basal area), all of which can be assessed using
-lidar data [@coops2021]. Data on ecosystem functionality ranges from
-phenology metrics (date of leaf on/leaf off; length of growing season)
-to functional traits (chlorophyll content; leaf area index) to
-productivity estimates (GPP; total available energy) [@pettorelli2018].
-Advances in satellite remote sensing processing have allowed 3d forest
-structure data to be imputed across wide spatial scales [@matasci2018;
-@coops2021] using data fusion approaches involving collected lidar data
-and optical/radar data. Other advances in image compositing have allowed
+Within forested ecosystems, there are therefore many possible remotely
+sensed derived ecosystem structure and function metrics that can be
+assessed. Structural variables range in complexity from simple (canopy
+cover; canopy height), to more complex (elevation coefficient of
+variation; elevation standard deviation) to modelled (aboveground
+biomass; basal area), all of which can be assessed using lidar data
+[@coops2021]. Data on ecosystem functionality ranges from phenology
+metrics (date of leaf on/leaf off; length of growing season) to
+functional traits (chlorophyll content; leaf area index) to productivity
+estimates (GPP; total available energy) [@pettorelli2018]. Advances in
+satellite remote sensing processing have allowed 3D forest structure
+data to be imputed across wide spatial scales [@matasci2018; @coops2021]
+using data fusion approaches involving collected lidar data and
+optical/radar data. Other advances in image compositing have allowed
 yearly summaries of vegetation productivity to be calculated at regional
 to global scales, summarizing the yearly total, minimum, and variation
 in energy availability at similar spatial resolutions [@radeloff2019].
 
-In forested ecosystems, stand structural attributes have also been shown
-to influence productivity, with a range of responses dependent on
-environmental conditions [@ali2019]. Linkages between forest structure
-and productivity (namely, vegetation indices) have been examined for
-nearly 20 years [@huete2002, @knyazikhin1998; @myneni1994]. While there
-is significant theoretical and empirical evidence for their relationship
-at single time points (within a single image) [@myneni1994], various
-relationship directions and shapes have been found between forest
-structure and productivity metrics [@ali2019]. These relationships,
-their shapes, and their strengths have been attributed to multiple
-possible hypotheses and have been shown to vary based on environmental
-conditions [@ali2019]. The relationship between forest structural
-diversity metrics and annual productivity summaries has yet to be fully
-examined, including the DHIs.
+Linkages between forest structure and function have been examined within
+a remote sensine context for over 20 years [@huete2002, @knyazikhin1998;
+@myneni1994]. While there is significant theoretical and empirical
+evidence for their relationship at single time points (within a single
+image) [@myneni1994], various relationship directions and shapes have
+been found between forest structure and function metrics [@ali2019].
+These relationships, their shapes, and their strengths have been
+attributed to multiple possible hypotheses and have been shown to vary
+based on environmental conditions [@ali2019]. The relationship in
+particular between forest structural diversity metrics - which are now
+more accurately and comprehensively derived from lidar data - and
+temporal variation in functional metrics, specifically the metrics of
+ecosystem productivity via the DHI framework, have yet to be fully
+examined.
 
 Understanding the complementarity between potential EBVs is an integral
 component of their creation [@skidmore2021]. Structural equation
@@ -243,22 +239,38 @@ functioning, and biodiversity [@ali2019]. For example, SEM has commonly
 been used to assess the role of structural diversity of carbon storage
 as compared to species diversity [@ali2016; @zhang2015].
 
-In this paper we seek to untangle the relationship between two EBVs:
-forest structure diversity metrics and yearly summaries of forest
-productivity. To accomplish this, we assess this relationship using path
-analysis to assess the direct and indirect (as mediated by more complex
-forest structural diversity metrics) effects of commonly collected
-forest structural metrics (canopy height and canopy cover) on yearly
-productivity summaries. Further, we use exploratory structural equation
-modelling (ESEM) to identify the latent variables driving the
-productivity metrics. We run this analysis using a sample of
-wall-to-wall forest structure and productivity data across the province
-of British Columbia, and stratified by the forested ecosystems of
-British Columbia, Canada, which has some of the largest environmental
-gradients on the planet. We compare models using AIC scores and global
-fit measures across the ecosystems [@pojar1987]. The results from this
-study will assess the linkages and complementarity between two commonly
-used biodiversity indicators.
+The overall goal of this paper is to characterize patterns of forest
+ecosystem structure and function and their interrelationships across a
+wide range of ecosystems encompassing significant environmental
+gradients. To do so, we synthesize data from moderate-scale
+remote-sensing derived metrics of structure, represented as both simple
+ALS metrics of canopy height and cover, as well as modeled forest
+structure variables including volume, and above ground biomass, with a
+remote sensing derived index on ecosystem function. Our first question
+is to examine how ecosystem structure and function vary across a large
+environmental gradient and then compare the simple and modeled
+representations of forest structure to different levels of ecosystem
+function. This question is important as it provides insights to the EBV
+community around redundancy in remote sensing metrics when describing
+structure and function on ecosystem and proposes a method to examine
+potential overlap when generating remote sensing EBV's.
+
+Our second question examines the independent and shared relationships of
+ecosystem structure height and cover, with modeled forest structure, on
+function. This provides insight into the choice of remote sensing
+attributes to use when developing EBV's. Remote sensing datasets can
+comprise relatively unprocessed, observations, in this case ALS measures
+of height and cover which are retrieval from the raw 3D point cloud, vs
+modeled attributes, such as biomass and volume, which involve the use
+the statistical relationships to transform the observations into more
+refined data products. Assessing which of these two (or combination of
+the two) approaches has more or less redundancy with estimates of
+function provides insights into the choice of data used to build EBV's.
+Lastly we examine how the primary and modeled structure attributes vary
+in their variance partitioning within key biomes across this large
+environmental range, examining to what extend ecosystem type impacts
+these interrelationships and thus the applicability of these results
+globally.
 
 # Methods
 
@@ -272,7 +284,10 @@ topographic gradients. The Biogeoclimatic Ecosystem Classification (BEC)
 system identifies 16 zones based on the dominant tree species and the
 ecosystems general climate. These zones can be further split into
 subzones, variants, and phases based on microclimate, precipitation, and
-topography [@pojar1987].
+topography [@pojar1987]. To examine trends across the large
+environmental gradients, we group the BEC zones into five broad biomes,
+specifically, the south interior, northern, montane, alpine, and coastal
+groups similar to @hamann2006.
 
 {insert figure showing ecosystems of interest} need to remake figure
 showing ecosystems, highlighting that bunchgrass and alpine zones are
@@ -325,74 +340,57 @@ have a forested land cover class (coniferous, deciduous, mixed-wood, or
 wetland-treed), and be surrounded by the same land cover class.
 Additionally, each pixel had to have a coefficient of variation less
 than 0.5 in the Lorey's height and canopy cover forest structural
-metrics. A maximum of 3000 samples were sampled in each BEC zone. To
-meet the normality assumptions of structural equation modelling, all
-variables were natural-log transformed and standardized, as per
-@grace2016. Variables containing zeros were natural-log plus one
-transformed.
+metrics. A maximum of 3000 samples were sampled in each BEC zone. All
+variables were natural-log transformed and standardized. Variables
+containing zeros were natural-log plus one transformed.
 
 ## Analysis
 
-### Path Analysis
+### General Trends in Forest Structure and Ecosystem Variables
 
-To determine the relationships between simple lidar derived forest
-structural attributes, complex/derived forest structural attributes, and
-forest productivity, we used path analysis to analyze two causal models
-(@fig-pathdag). To determine primary drivers of the three DHIs, we will
-summarize the predictors across ecosystems by counting the strongest
-predictor in each BEC zone. This will determine if the primary driver
-for each facet of the DHI is simple or complex, and allow us to assess
-ecosystem differences.
+General statistics were computed to characterize British Columbia-wide
+variables of ecosystem structure and function. To do so, the primary and
+modeled forest structure attributes and the three DHI components were
+compared with ANOVAs.
 
+### Partial Redundancy and Variable Partitioning:
 
-::: {.cell}
-::: {.cell-output-display}
-![Proposed path diagrams.](../../outputs/path_dags.png){#fig-pathdag}
-:::
-:::
-
-
-### Exploratory Structural Equation Modelling
-
-Secondly, we will use exploratory structural equation modelling
-[@marsh2020; @asparouhov2009] to identify latent forest structural
-variables within the data, and use these latent variables to predict the
-dynamic habitat indices. Exploratory structural equation modelling is a
-combination of exploratory factor analysis (EFA) and structural equation
-modelling, which relaxes the strict requirement of zero cross-loadings
-in confirmatory factor analysis and allows for less strict measurement
-models to be used. ESEM is used when it is known that there is a latent
-structure to the data, but the specific indicator variables have not yet
-been determined.
-
-One advantage of ESEM is that it can create varying numbers of latent
-variables. For our analysis, we first ran exploratory factor analysis on
-all forest structural attributes both globally and by BEC zone with
-between 1-4 potential latent variables. We chose the most parsimonious
-EFA model with the lowest AIC scores for each ecosystem, leading to
-varying numbers of latent variables. We then determined the anchoring
-indicator for each latent variable. The anchors were calculated by
-choosing the indicator variable with the largest difference between the
-maximum value in a given loading compared to to said indicators loadings
-in all other latent variables. Each anchor variable was then assigned to
-a named group (Canopy Cover, Height and Biomass, and Structural
-Complexity).
-
-Following the EFA, we used structural equation modelling, with latent
-variables loadings determined by the EFA. We also filtered the loadings
-to be greater than or equal to 0.5, allowing us to examine the number
-and composition of latent variables found in each ecosystem. Following
-this, we predicted the DHIs in a single SEM with covariances between the
-DHIs. If a forest structural attribute did not end up in a latent
-variable, it was included in the structural equation model as a DHI
-predictor, without a latent variable as a mediator.
+Partial redundancy analysis and variable partitioning was used to relate
+the primary and modeled forest structure variables to ecosystem
+structure, to assess the inter-relationships on forest ecosystem
+function across the broad environment range. Redundancy analysis has
+widely been used in community ecology where environmental variables of
+interest are compared to species composition, and when the effect of
+space for example is assessed as a third covariate, in an approach known
+as partial redundancy analysis. While RDA is common in the ecological
+literature, this represents one of the first times this technique has
+been applied to assess redundancy in proposed essential biodiversity
+variables. Redundancy analysis utilizes multiple regression in that it
+models the effect of an explanatory matrix on a response matrix; with
+the key difference being the use of a response matrix rather than a
+single response variable. The first step is a multiple regression where
+each of the variables in the response and explanatory matrices are
+regressed resulting in a matrix of fitted values. PCA is then used in
+the second step to reduce dimensionality through eigenvectors and to
+allow the strength of relationships between assessed, taking into
+account the number of explanatory variables. Partial Redundancy Analysis
+(PRA) allows the use of additional explanatory variables, or
+co-variates. This is useful, as it allow the assessment of the effect of
+one set of variables on another while taking into account variations due
+to other third set that are not the focus of the study. The output is
+similar to standard RDA except it is also possible to examine how much
+variation is explained in the primary variables of interest, and the
+co-variates alone, and then when combined together. This variance
+partitioning is then shown typically through a Venn diagram, in which
+the percentage of explained variance by each explanatory data set is
+reported.
 
 ## Software
 
 The processing for this paper was done in R version 4.2.2 [@R-base]. We
 used *sgsR* [@goodbody2023] for sampling, *terra* [@R-terra] for raster
-analyses, *sf* for vector analyses [@R-sf], and *lavaan* [@lavaan2012]
-for path analysis and structural equation modelling.
+analyses, *sf* for vector analyses [@R-sf], and *vegan* [@R-vegan] for
+redundancy analysis and variance partitioning.
 
 Focal analyses were conducted in R and Python, and the sampling was
 conducted across a masked suitability raster for each BEC zone using the
