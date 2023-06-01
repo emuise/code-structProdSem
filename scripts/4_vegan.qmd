@@ -5,11 +5,13 @@ editor: visual
 ---
 
 ```{r packages}
-library("vegan")
-library("tidyverse")
-library("cols4all")
+library(vegan)
+library(tidyverse)
+library(cols4all)
 library(terra)
 library(sf)
+library(patchwork)
+library(ggradar)
 source(here::here("scripts", "get_keys.R"))
 ```
 
@@ -46,11 +48,6 @@ theme_set(my_theme)
 ```{r data-prep}
 bec_sample_loc <- here::here("data", "samples", "bec_extracted.shp")
 
-if (!file.exists(bec_sample_loc)) {
-  bec_samples_e <- extract(all_rasts, bec_samples, bind = T)
-  writeVector(bec_samples_e, bec_sample_loc, overwrite = T)
-}
-
 bec_samples_e <- vect(bec_sample_loc)
 
 bec_df <- bec_samples_e %>% 
@@ -86,24 +83,25 @@ names(bec_df) <- names_manual
 bec_normal <- bec_df %>%
   mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
 
-bec_normal_ndup <- bec_df %>%
-  group_by(across(c(bec, category, basal_area:total_biomass))) %>%
-  dplyr::summarize(across(ends_with("DHI"), mean)) %>%
-  ungroup() %>%
-  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+
 ```
 
 ```{r global-model}
 to_rda <- bec_normal %>%
   select(-elev_mean,
          -percentage_first_returns_above_mean,
-         -elev_stddev)
+         -elev_stddev,
+         -loreys_height)
 
-to_rda <- bec_normal %>% 
-  group_by(category) %>% 
-  slice_sample(n = 3000)  %>% 
-  filter(category == "Mixed Wood") %>% 
-  ungroup()
+forest_types <- bec_normal %>%
+  pull(category) %>%
+  unique()
+
+# to_rda <- bec_normal %>% 
+#   group_by(category) %>% 
+#   slice_sample(n = 3000)  %>% 
+#   filter(category == "Mixed Wood") %>% 
+#   ungroup()
 
 dhi_tab <- to_rda %>%
   select(ends_with("DHI"))
@@ -115,8 +113,7 @@ extracted <- to_rda %>%
          percentage_first_returns_above_2m)
 
 modelled <- to_rda %>%
-  select(loreys_height,
-         basal_area,
+  select(basal_area,
          total_biomass,
          gross_stem_volume)
 
@@ -124,7 +121,7 @@ modelled <- to_rda %>%
 
 rda_out <- 
   rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/extracted
-      basal_area + gross_stem_volume + loreys_height + total_biomass, # modelled
+      basal_area + gross_stem_volume + total_biomass, # modelled
       data = to_rda)
 
 ordiplot(rda_out, choices = c(1, 2))
@@ -146,16 +143,48 @@ rda_eig <- rda_out$CCA$eig %>%
 # scores(rda_out, choices = c(1:3))$biplot
 # not actually the loadings, need to get those from correlations
 
-summary(rda_out)$sites %>% 
+rcorr <- summary(rda_out)$sites %>% 
   as.data.frame() %>% 
-  select(RDA1:RDA3) %>% 
+  select(starts_with("RDA")) %>% 
   bind_cols(to_rda) %>%
   select(-bec, -category) %>% 
-  cor() %>%
+  as.matrix() %>%
+  Hmisc::rcorr()
+
+rvals <- rcorr$r %>%
   as.data.frame() %>%
-  select(RDA1:RDA3) %>%
-  arrange(desc(abs(RDA1))) %>%
-  filter(!(startsWith(row.names(.), "RDA")))
+  select(starts_with("RDA")) %>%
+  mutate(var = row.names(.)) %>%
+  pivot_longer(starts_with("RDA"),
+               values_to = "axis_loading",
+               names_to = "axis") %>%
+  filter(!startsWith(var, "RDA"))
+
+pvals <- rcorr$P %>%
+  as.data.frame() %>%
+  select(starts_with("RDA")) %>%
+  mutate(var = row.names(.)) %>%
+  pivot_longer(starts_with("RDA"),
+               values_to = "axis_p",
+               names_to = "axis") %>%
+  filter(!startsWith(var, "RDA"))
+
+all_data_loadings <- left_join(rvals, pvals) %>%
+  filter(axis != "RDA3") %>%
+  mutate(sig = cut(axis_p, 
+                   breaks = c(0, 0.001, 0.01, 0.05, .10, 1),
+                   labels = c("***", "**", "*", ".", "NS"),
+                   right = F)) 
+
+for_radar_loads <- all_data_loadings %>%
+  filter(!endsWith(var, "DHI")) %>%
+  mutate(axis_loading = ifelse(sig == "NS", 0, abs(axis_loading))) %>%
+  select(var, axis, axis_loading) %>%
+  pivot_wider(names_from = var, values_from = axis_loading) %>%
+  mutate(cluster = paste(axis, "- All Data")) %>%
+  select(-axis) %>%
+  relocate(cluster)
+
 
 var_out <- varpart(dhi_tab, extracted, modelled)
 
@@ -196,13 +225,43 @@ anova_out$`Pr(>F)` %>%
 The model is statistically significant (P \< 0.001). All of the axes are significant, although this may be related to the large sample size.
 
 ```{r bec-nest}
-to_nest <- bec_normal
+to_nest <- bec_normal %>%
+  select(-percentage_first_returns_above_mean,
+         -loreys_height,
+         -elev_stddev,
+         -elev_mean)
 
 bec_nested <- to_nest %>%
   group_by(bec) %>%
   nest() %>%
   ungroup() %>%
   rename(strata = bec)
+
+
+# vlce sampling regime to get the samples up
+vlce_samples <- read_sf(here::here("data", "samples", "vlce_extracted.shp"))
+
+vlce_df <- vlce_samples %>%
+  st_drop_geometry() %>%
+  select(-category_1, -category_2) %>%
+  rename(category = strata) %>%
+  relocate(bec) %>%
+  drop_na() %>%
+  ungroup()
+
+names(vlce_df) <- names_manual
+
+vlce_normal <- vlce_df %>%
+  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+
+to_nest <- vlce_normal %>%
+  select(-percentage_first_returns_above_mean,
+         -loreys_height,
+         -elev_stddev,
+         -elev_mean)
+
+
+
 
 class_nested <- to_nest %>%
   group_by(category) %>%
@@ -222,7 +281,7 @@ my_rda_fun <- function(tibble) {
     select(ends_with("DHI"))
   
   rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/extracted
-      basal_area + gross_stem_volume + loreys_height + total_biomass, # modelled, put condition here for a conditional rda
+      basal_area + gross_stem_volume + total_biomass, # modelled, put condition here for a conditional rda
       data = tibble)
 }
 
@@ -237,8 +296,7 @@ my_var_fun <- function(tibble) {
            percentage_first_returns_above_2m)
   
   modelled <- tibble %>%
-    select(loreys_height,
-           basal_area,
+    select(basal_area,
            total_biomass,
            gross_stem_volume)
   
@@ -271,19 +329,64 @@ fracts_out <- outs %>%
 
 fracts_out %>% 
   mutate(total = extracted + modelled + overlap) %>%
-  arrange(strata %in% (bec_normal %>%
-           pull(category) %>%
-           unique()),
+  arrange(strata %in% forest_types,
           desc(total))
+```
+
+```{r}
+fract_all <- path_r2 %>% 
+  pivot_wider(names_from = type, values_from = Adj.R.squared) %>% 
+  select(-residual) %>%
+  mutate(strata = "All Data") %>% 
+  relocate(strata)
+
+fracts_all <- bind_rows(fracts_out,
+                        fract_all)
+
+fracts_tot <- fracts_all %>% 
+  mutate(total = extracted + modelled + overlap) %>%
+  select(strata, total)
+
+fracts_bar_tab <- fracts_all %>%
+  pivot_longer(-strata) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Types", group),
+         group = ifelse(strata == "All Data", "All", group)) %>%
+  left_join(fracts_tot) %>%
+  mutate(zone_nm = ifelse(is.na(zone_nm), strata, zone_nm))
+
+
+fracts_bar_tab
+
+fracts_bar_plot <- fracts_bar_tab %>%
+  ggplot(aes(x = value, y = fct_reorder(zone_nm, total), fill = fct_rev(fct_relevel(str_to_title(name), "Overlap", after = 1)))) +
+  geom_col(position = "stack") +
+  facet_grid(rows = vars(fct_reorder(group, total, .desc = T)),
+             scales = "free_y",
+             space = "free") +
+  labs(x = "Variance Explained",
+       y = NULL,
+       fill = NULL) +
+  theme(legend.position = "bottom",
+        panel.spacing.y = unit(0, "lines")) +
+  guides(fill = guide_legend(reverse = T)) +
+  scale_x_continuous(labels = scales::label_percent())
+
+fracts_bar_plot
+ggsave(here::here("outputs", "fracts_bar_plot.png"), plot = fracts_bar_plot)
 ```
 
 ```{r raincloud-plot}
 library(ggdist)
 fracts_out %>%
+  mutate(total = extracted + modelled + overlap) %>%
   #left_join(keys$bec, by = c("bec" = "zone")) %>%
-  pivot_longer(extracted:overlap) %>%
+  pivot_longer(-strata) %>%
   mutate(name = str_to_title(name)) %>%
-  mutate(value = ifelse(value < 0, 0, value)) %>%
+  mutate(value = ifelse(value < 0, 0, value),
+         class = ifelse(strata %in% forest_types, 
+                        "Forest Types", 
+                        "BEC Zones")) %>%
   ggplot(aes(x = value, y = name)) +
   stat_halfeye(
     # adjust bandwidth
@@ -309,9 +412,9 @@ fracts_out %>%
     binwidth = 0.0025,
     #position = "stack",
     # aes(fill = group, col = group),
-    alpha = 0.5
+    alpha = 0.5,
+    aes(shape = class)
   ) +
-
   labs(y = NULL,
        x = "% Variance Explained",
        fill = "BEC Group",
@@ -346,17 +449,19 @@ path_base <- tibble(x1 = c(0,
               0)) %>%
   ggplot(aes(x = x1, y = y1)) +
   geom_segment(aes(xend = x2, yend = y2), arrow = arrow()) +
-  geom_text(aes(x = 0, y = -1.15), label = "Modelled") +
-  geom_text(aes(x = 0, y = 1.15), label = "Extracted") +
-  geom_text(aes(x = .65, y = 0), label = "Overlap") +
-  geom_text(aes(x = 2, y = 0), label = "DHIs") +
   geom_point(data = tibble(x1 = c(.85, .85), 
                            y1 = c(-.5, .5)),
-             size = 75,
+             size = 60,
              shape = 21,
              col = "grey") +
+  # geom_text(aes(x = 0, y = -1.15), label = "Modelled\nAttributes") +
+  # geom_text(aes(x = 0, y = 1.15), label = "Extracted\nAttributes") +
+  # geom_text(aes(x = .65, y = 0), label = "Overlap") +
+  # geom_text(aes(x = 2, y = 0), label = "Dynamic\nHabitat\nIndices") +
   theme_void() +
   scale_x_continuous(limits = c(-0.1, 2.1))
+
+ggsave(here::here("outputs", "path_base.png"), path_base)
 
 path_r2_plot <- tibble(type = c("extracted", "modelled", "overlap"),
        x1 = c(0.85, 0.85, 0.85),
@@ -384,131 +489,10 @@ path_r2_clean <- path_r2_plot %>%
   mutate(r2_label = paste0(round(Adj.R.squared * 100, 2), "%"))
 
 path_base +
-  geom_text(data = path_r2_clean, aes(label = r2_label)) +
-  labs(title = paste(var_oi, collapse = " "))
-```
+  geom_text(data = path_r2_clean, aes(label = r2_label))
 
-```{r group-climate-spatial}
-climate_folder <- here::here("data", "climate")
-
-clim_vars <- climate_folder %>%
-  list.files(pattern = "csv$") %>%
-  tools::file_path_sans_ext() 
-
-clim_vars <- clim_vars[!str_detect(clim_vars, "bec")]
-
-group_clim_avg <-
-  here::here(climate_folder, paste0(clim_vars, ".csv")) %>%
-  read_csv() %>%
-  mutate(var = clim_vars %>% rep(5) %>% sort) %>%
-  select(group = BEC_CSV_GR, mean = MEAN, var)
-
-```
-
-```{r clim-plot-group}
-fracts_clims <- fracts_out %>%
-  left_join(keys$bec, by = c("bec" = "zone")) %>%
-  group_by(group) %>%
-  summarize(across(extracted:overlap, .fns = mean)) %>%
-  left_join(group_clim_avg, multiple = "all")
-
-clim_var = "tmax"
-
-fracts_clims %>%
-  pivot_longer(extracted:overlap) %>%
-  filter(var == clim_var) %>%
-  ggplot(aes(x = mean, y = value)) +
-  geom_smooth(method = "lm", col = "red", lty = "dashed") +
-  geom_point() +
-  facet_wrap(~str_to_title(name)) +
-  scale_y_continuous(labels = scales::label_percent()) +
-  labs(x = clim_var,
-       y = "% Variance Explained") +
-  theme_bw() +
-  theme(panel.grid = element_blank())
-```
-
-```{r clim-plot-bec}
-clim_vars <- climate_folder %>%
-  list.files(pattern = "csv$") %>%
-  tools::file_path_sans_ext() 
-
-clim_vars <- clim_vars[!str_detect(clim_vars, "bec")]
-
-bec_clim <- climate_folder %>%
-  list.files(pattern = "bec.csv$",
-             full.names = T) %>%
-  read_csv() %>%
-  mutate(var = clim_vars %>% rep(16) %>% sort) %>%
-  select(bec = ZONE, mean = MEAN, var)
-
-fracts_out %>%
-  pivot_longer(extracted:overlap) %>%
-  left_join(bec_clim, multiple = "all") %>%
-  filter(var == "ppt") %>%
-  ggplot(aes(x = mean, y = value)) +
-  geom_point() +
-  geom_smooth(method = "lm") + 
-  facet_wrap(~name) +
-  theme_bw() +
-  theme(panel.grid = element_blank())
-```
-
-```{r testing-idf-live}
-to_rda <- bec_normal %>%
-  filter(bec == "IDF")
-
-dhi_tab <- to_rda %>%
-  select(ends_with("DHI"))
-
-extracted <- to_rda %>%
-  select(elev_p95,
-         elev_cv,
-         percentage_first_returns_above_2m)
-
-modelled <- to_rda %>%
-  select(loreys_height,
-         basal_area,
-         total_biomass,
-         gross_stem_volume)
-
-
-rda_out <- 
-  rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/extracted
-      basal_area + gross_stem_volume + loreys_height + total_biomass, # modelled
-    data = to_rda)
-
-rda_out
-
-ordiplot(rda_out, choices = c(1, 2))
-
-rda_eig <- rda_out$CCA$eig
-
-var_out <- varpart(dhi_tab, extracted, modelled)
-
-plot(var_out, Xnames = c("Extracted", "Modelled"))
-
-path_r2 <- var_out$part$indfract %>%
-      mutate(type = c("extracted", "modelled", "overlap", "residual")) %>%
-      select(type, Adj.R.squared) %>%
-  tibble()
-
-path_r2_clean <- path_r2_plot %>%
-  left_join(path_r2) %>%
-  mutate(r2_label = paste0(round(Adj.R.squared * 100, 2), "%"))
-
-path_base +
-  geom_text(data = path_r2_clean, aes(label = r2_label)) +
-  labs(title = "All")
-
-summary(rda_out)$sites %>% 
-  as.data.frame() %>% 
-  select(RDA1) %>% 
-  bind_cols(to_rda) %>%
-  select(-bec, -category) %>% cor() %>%
-  as.data.frame() %>%
-  select(RDA1) %>%
-  arrange(desc(abs(RDA1)))
+ggsave(here::here("outputs", "path_venn.png"),
+        height = 3.5, width = 10)
 ```
 
 ```{r boxplots-dhi-bec}
@@ -527,15 +511,6 @@ bec_df %>%
        y = NULL,
        fill = NULL) +
   scale_fill_discrete_c4a_cat(palette = "batlow")
-```
-
-```{r cdf-anova}
-outs %>% 
-  filter(bec == "IDF") %>%
-  select(rda) %>% 
-  pull(rda) %>%
-  .[[1]] %>%
-  anova(by = "axis")
 ```
 
 ```{r cum-min-hexplot}
@@ -589,7 +564,7 @@ anova_outs <- outs %>%
   }, .progress = "anovas"))
 
 anova_sig_axes <- anova_outs %>%
-  select(bec, anova) %>%
+  select(strata, anova) %>%
   unnest(cols = anova) # %>%
   # filter(anova_sig != "NS")
 
@@ -597,20 +572,27 @@ axis_varexp <- anova_sig_axes %>%
   inner_join(eig_outs)
 
 axis_varexp %>%
-  left_join(keys$bec, by = c("bec" = "zone")) %>%
-  ggplot(aes(x = axis, y = var_exp, col = axis)) +
+  filter(anova_sig != "NS") %>%
+  filter(strata %in% forest_types)
+
+axis_varexp %>%
+  filter(anova_sig != "NS") %>%
+  mutate(category = ifelse(strata %in% forest_types, "Forest Types", "BEC Zones")) %>%
+  # left_join(keys$bec, by = c("bec" = "zone")) %>%
+  ggplot(aes(x = axis, y = var_exp, col = category, shape = category)) +
   geom_jitter(height = 0, width = 0.05) +
   theme(legend.position = "bottom") +
   labs(x = NULL,
        y = "% of Variance Explained",
-       col = NULL) +
+       col = NULL,
+       shape = NULL) +
   scale_y_continuous(labels = scales::label_percent())
 # no secondary axis in alpine & coast.
 
 axis_varexp %>%
-  group_by(bec) %>%
+  group_by(strata) %>%
   # filter(n() == 2) %>%
-  select(bec, axis, var_exp) %>% 
+  select(strata, axis, var_exp) %>% 
   pivot_wider(names_from = axis,
               values_from = var_exp) %>%
   mutate(ratio = RDA1 / RDA2)
@@ -619,16 +601,64 @@ axis_varexp %>%
 # is low, the ratio is low. this is because there isn't much variance explained
 ```
 
+```{r varexp-coniferous}
+rda_varexp <- outs %>%
+  mutate(varexp = map(rda, .f = \(rda) {
+    rda_sum <- summary(rda)
+    var_exp <- rda_sum$constr.chi / rda_sum$tot.chi
+  })) %>%
+  unnest(varexp) %>%
+  arrange(desc(varexp)) %>%
+  select(strata, varexp)
+
+rda_varexp %>%
+  arrange(strata %in% forest_types,
+          desc(varexp))
+
+source(here::here("scripts", "get_bec_proportion_vlce.R"))
+
+
+prop_con <- bec_normal %>% 
+  select(bec, category) %>% 
+  group_by(bec) %>% 
+  summarize(per_sample_for = mean(category == "Coniferous")) %>% 
+  left_join(per_cons %>% 
+              select(-value)) %>% 
+  mutate(for_dif = per_sample_for - per_con) %>%
+  arrange(desc(abs(for_dif))) %>%
+  select(-for_dif) %>%
+  pivot_longer(starts_with("per"))
+
+con_var_plot <- prop_con %>%
+  filter(name == "per_con") %>%
+  left_join(rda_varexp, by = c("bec" = "strata")) %>% 
+  left_join(keys$bec, by = c("bec" = "zone")) %>%
+  mutate(name = ifelse(name == "per_con", 
+                       "Global Percent Coniferous", 
+                       "Sample Percent Coniferous")) %>%
+  ggplot(aes(x = value, y = varexp)) +
+  geom_point(aes(col = group)) +
+  geom_smooth(method = "lm") +
+  scale_x_continuous(labels = scales::label_percent()) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  labs(x = "Percent Coniferous",
+       y = "Proportion of variance explained",
+       col = NULL) +
+  theme(legend.position = c(0.1, 0.85))
+
+ggsave(here::here("outputs", "con_var.png"), plot = con_var_plot)
+```
+
 ```{r bec-loadings}
 out_loadings <- outs %>%
-  mutate(loadings = map(rda,.f = function(rda) {
+  mutate(loadings = map(rda, .f = function(rda) {
     summary(rda)$sites %>%
       as.data.frame() %>%
       select(starts_with("RDA"))
   }),
   loadings = map2(.x = loadings, .y = data, .f = bind_cols),
   loadings = map(loadings, .f = function(x) {
-    rcorr <- x %>% select(-category) %>%
+    rcorr <- x %>% select(-any_of(c("bec", "category"))) %>%
       as.matrix() %>%
       Hmisc::rcorr()
     
@@ -655,7 +685,7 @@ out_loadings <- outs %>%
   }
   
   )) %>%
-  select(bec, loadings) %>%
+  select(strata, loadings) %>%
   unnest(loadings)
 ```
 
@@ -675,21 +705,23 @@ sig_loads <- out_loadings %>%
   drop_na()# removes ima mindhi which has no variance
 
 sig_loads %>%
+  filter(anova_sig != "NS") %>%
   filter(endsWith(var, "DHI"),
          axis == "RDA2") %>%
-  arrange(bec) %>%
-  select(bec, var, axis_loading) %>%
+  arrange(strata) %>%
+  select(strata, var, axis_loading) %>%
   pivot_wider(names_from = var,
               values_from = axis_loading)
-# when a second axis is present, it has a weak loading on the cumulative DHI
+# when a second axis is present, it has a weak loading on the cumulative DHI, as compared to the other DHIs
 # while the majoirty of the variability is contained within all three DHIs together, the second axis, when present, is more linked to the minmimum and variation DHI.
 
 sig_loads %>%
-  select(bec, var, axis, axis_loading, loading_sig) %>%
-  filter(endsWith(var, "DHI")) %>%
-  ggplot(aes(x = var, y = axis_loading, group = bec)) +
-  geom_point(aes(col = bec)) +
-  geom_line(aes(col = bec), alpha = 0.5, lty = "dashed") +
+  select(strata, var, axis, axis_loading, loading_sig) %>%
+  filter(endsWith(var, "DHI"),
+         loading_sig != "NS") %>%
+  ggplot(aes(x = var, y = abs(axis_loading), group = strata)) +
+  geom_point(aes(col = strata)) +
+  geom_line(aes(col = strata), alpha = 0.5, lty = "dashed") +
   geom_hline(yintercept = 0, col = "red", alpha = 0.2) +
   facet_wrap(~axis) +
   theme_bw() +
@@ -698,12 +730,12 @@ sig_loads %>%
        y = "Axis Loading")
 
 sig_loads %>%
-  select(bec, var, axis, axis_loading) %>%
+  select(strata, var, axis, axis_loading) %>%
   filter(!endsWith(var, "DHI")) %>%
   left_join(keys$continuous, by = c("var" = "variable")) %>%
-  ggplot(aes(x = var_long, y = abs(axis_loading), group = bec)) +
-  geom_point(aes(col = bec)) +
-  geom_line(aes(col = bec), alpha = 0.5, lty = "dashed") +
+  ggplot(aes(x = var_long, y = abs(axis_loading), group = strata)) +
+  geom_point(aes(col = strata)) +
+  geom_line(aes(col = strata), alpha = 0.5, lty = "dashed") +
   geom_hline(yintercept = 0, col = "red", alpha = 0.2) +
   facet_wrap(~axis) +
   theme(axis.text.x = element_text(angle = 45,
@@ -714,11 +746,11 @@ sig_loads %>%
 sig_loads %>%
   filter(!endsWith(var, "DHI"),
          loading_sig != "NS") %>%
-  group_by(bec, axis) %>%
+  group_by(strata, axis) %>%
   mutate(loading_rank = data.table::frankv(abs(axis_loading), 
                                            order = -1)) %>%
   ggplot(aes(x = fct_reorder(var, loading_rank),
-             y = loading_rank, col = bec)) +
+             y = loading_rank, col = strata)) +
   geom_jitter(height = 0) +
   facet_wrap(~axis) +
   theme(axis.text.x = element_text(angle = 45, 
@@ -729,69 +761,472 @@ sig_loads %>%
 # need to remove the correlations for variables that arent actually involved
 # percentage_first_returns_above_mean, elev_mean, elev_stddev
 out_loadings %>% count(var)
+
+clean_loads <- sig_loads %>%
+  filter(anova_sig != "NS",
+         loading_sig != "NS") %>%
+  bind_rows(all_data_loadings %>%
+              mutate(strata = "All Data") %>%
+              rename(loading_sig = sig)) %>%
+  select(strata:axis_loading) %>%
+  mutate(axis_loading = abs(axis_loading))
 ```
 
-```{r jenkies}
-library(rgeoda)
-sig_loads_f <- sig_loads %>%
-  filter(!endsWith(var, "DHI"),
-         loading_sig != "NS")
+##### run to here for analysis to be done
+radar chart based on groups, not hierarchical clustering
 
-jenkies <- sig_loads_f %>%
-  mutate(axis_loading = abs(axis_loading)) %>%
-  group_by(bec, axis) %>%
-  select(bec, axis, axis_loading) %>%
-  nest() %>%
-  mutate(breaks = map(data, natural_breaks, k = 2)) %>%
-  unnest(breaks) %>%
-  select(-data)
+```{r radar}
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
 
-sig_loads_f %>%
-  ggplot(aes(x = bec, y = abs(axis_loading))) +
-  facet_wrap(~axis) +
-  geom_point(data = jenkies, aes(y = breaks), col = "red", size = 3) +
-  geom_point(aes(shape = var))
-
-sig_loads_f %>%
-  left_join(jenkies) %>%
-  mutate(strong = abs(axis_loading) > breaks) %>%
-  ggplot(aes(x = bec, y = var)) +
-  geom_tile(aes(fill = strong, alpha = abs(axis_loading)))
-  geom_point(aes(col = strong))
-  left_join(keys$bec, by = c("bec" = "zone")) %>%
-  group_by(var) %>%
-  summarize(per_strong = sum(strong) / n()) 
+n = 8
+cols = c4a(palette = "rainbow", n = 8)
 
 
 
-# We identified large contributors to each axis using a thresholding process. The threshold for each BEC zone and significant RDA axis was determined by using the Jenks natural breaks optimization method with k = 2 on significant loadings. We then summarized the most common large contributors across BEC zones and our BEC groupings.
-```
 
-```{r cutoffs}
-for_cutoff_plot <- sig_loads_f %>%
-  select(bec, axis, var, axis_loading) %>%
-  crossing(cutoff = seq(0, 1, 0.01)) %>%
-  mutate(over_cut = abs(axis_loading) > cutoff) %>%
-  group_by(var, cutoff) %>%
-  summarize(prop_over_cut = sum(over_cut) / n())
+radar_loads <- clean_loads %>%
+  pivot_wider(names_from = var, 
+              values_from = axis_loading) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Types", group),
+         group = ifelse(strata == "All Data", "All Data", group),
+         group = ifelse(axis == "RDA2", "RDA2", group)) %>%
+  group_by(group) %>%
+  summarize(across(CumDHI:elev_p95, \(x) mean(x, na.rm = T))) %>%
+  mutate(group = fct_relevel(group, "RDA2", after = Inf),
+         group = fct_relevel(group, "Forest Types", after = 1))
 
-for_cutoff_plot %>%
+radar_labels <- radar_loads %>%
+  select(percentage_first_returns_above_2m:elev_p95) %>%
+  colnames() %>%
+  tibble(variable = .) %>%
+  left_join(keys$continuous) %>%
+  pull(var_long)
+
+in_radar <- radar_loads %>%
+  select(!ends_with("DHI")) %>%
+  replace(is.na(.), 0) %>%
+  ggradar(axis.labels = radar_labels,
+          legend.title = "Cluster",
+          values.radar = c("", "", 1),
+          base.size = 1,
+          background.circle.transparency = 0,
+          group.point.size = 2,
+          group.colours = cols,
+          axis.label.size = 3,
+          plot.extent.x.sf = 1.5,
+          group.line.width = 1) +
+  theme(legend.position = "none")
+
+out_radar <- radar_loads %>%
+  select(group, ends_with("DHI")) %>%
+  replace(is.na(.), 0) %>%
+  
+  ggradar(legend.title = "Cluster",
+          values.radar = c("", "", 1),
+          base.size = 1,
+          background.circle.transparency = 0,
+          group.point.size = 2,
+          group.colours = cols,
+          axis.label.size = 3,
+          plot.extent.x.sf = 1.5,
+          group.line.width = 1) +
+  theme(legend.position = "none")
+
+boxplots <- clean_loads %>% 
   left_join(keys$continuous, by = c("var" = "variable")) %>%
-  ggplot(aes(x = cutoff, y = prop_over_cut, col = var_long)) +
-  geom_line() +
-  theme(legend.position = c(0.8, 0.6)) +
-  labs(x = "Cutoff Value",
-       y = "Proportion of loadings above cutoff",
-       col = "Variable") +
-  scale_y_continuous(labels = scales::label_percent()) +
-  scale_color_discrete_c4a_cat(palette = "met.tsimshian") +
-  geom_vline(xintercept = c(0.2, 0.25, 0.3), col = "red", lty = "dashed")
+  mutate(var_long = ifelse(is.na(var_long), var, var_long)) %>%
+  select(!(divide_by:unit)) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Types", group),
+         group = ifelse(axis == "RDA2", "RDA2", group),
+         group = ifelse(strata == "All Data", "All Data", group),
+         inout = ifelse(endsWith(var, "DHI"), "Response", "Predictor")) %>%
+  mutate(group = fct_relevel(group, "RDA2", after = Inf),
+         group = fct_relevel(group, "Forest Types", after = 1)) %>%
+  ggplot(aes(x = abs(axis_loading), y = fct_rev(fct_reorder(var_long, abs(axis_loading))))) +
+  geom_boxplot(outlier.colour = "#00000000", width = .5) +
+  geom_jitter(height = 0.1, aes(col = group, shape = group)) +
+  facet_grid(cols = vars(axis),
+             rows = vars(inout),
+             scales = "free_y",
+             space = "free_y") +
+  labs(x = "Axis Loading (absolute)",
+       y = NULL,
+       col = NULL,
+       shape = NULL) +
+  theme(panel.spacing.y = unit(0, "lines"),
+        legend.position = "right") +
+  scale_shape_manual(values = c(17, 15, 16, 16, 16, 16, 16, 16)) +
+  scale_colour_manual(values = cols)
+
+radar_boxplot <- ((in_radar / out_radar) | boxplots)  +
+  plot_annotation(tag_levels = "A") +
+  plot_layout(guides = "collect") &
+  theme(plot.tag = element_text(size = 12)) 
+
+ggsave(here::here("outputs", "radar_boxplot.png"),
+       plot = radar_boxplot,
+       device = "png")
 ```
 
-calculate the actual variance explained
+```{r drawio}
 
-get total rda eigenvalues. find proportion of total for each rda. multiple by 1 - residual. and thats gets path number b/w RD1/RD2 and DHIs. can just filter each by which exist since only a few. goes for path plot
+# make dir
+drawio_dir <- here::here("outputs", "drawio")
 
-grab the p values w/in zones as well as the correlation coefficients using Hmisc::rcorr(). only plot these plus loadings over threshold
+dir.create(drawio_dir, showWarnings = F)
 
-check if deciduous and coniferous have signfiicant axes
+# templates
+one_rda <-
+  read_lines(here::here(drawio_dir, "_rda_path-text_replace-RDA1.drawio"))
+
+two_rda <-
+  read_lines(here::here(drawio_dir, "_rda_path-text_replace-RDA2.drawio"))
+
+# list to iterate
+stratum <- clean_loads %>%
+  pull(strata) %>%
+  unique()
+
+
+# make sure everything gets change in rda fig
+possibles <- clean_loads %>%
+  select(var, axis) %>%
+  complete() %>%
+  mutate(possible = paste(var, axis, sep = "-")) %>%
+  pull(possible) %>%
+  unique()
+
+
+# fractions dfs
+fract_all <- path_r2 %>% 
+  pivot_wider(names_from = type, values_from = Adj.R.squared) %>% 
+  select(-residual) %>%
+  mutate(strata = "All Data") %>% 
+  relocate(strata)
+
+fracts_all <- fracts_out %>%
+  bind_rows(fract_all)
+
+# variance explained by axis
+
+all_varexp <- rda_eig %>%
+  filter(name != "RDA3") %>%
+  mutate(strata = "All Data") %>%
+  rename(axis = name) %>%
+  select(-value)
+
+varexp_all <- axis_varexp %>%
+  filter(anova_sig != "NS") %>%
+  select(strata, axis, prop, var_exp) %>%
+  bind_rows(all_varexp)
+
+
+
+for (s in stratum) {
+  strata_tp <- clean_loads %>%
+    filter(strata == s) %>%
+    mutate(textreplace = paste(var, axis, sep = "-"),
+           axis_loading = as.character(round(axis_loading, digits = 2)))
+  
+  if (strata_tp %>% pull(axis) %>% unique() %>% length() == 1) {
+    strata_drawio <- one_rda
+  } else {
+    strata_drawio <- two_rda
+  }
+  
+  textreplace <- strata_tp %>%
+    pull(textreplace)
+  
+  replaceval <- strata_tp %>%
+    pull(axis_loading)
+  
+  for (i in 1:length(textreplace)) {
+    text <- textreplace[[i]]
+    val <- replaceval[[i]]
+    
+    strata_drawio <- str_replace(strata_drawio, text, val)
+  }
+  
+  strata_drawio <- str_replace(strata_drawio, "title_strata", s)
+  
+  #strata_drawio <- strata_drawio[!str_detect(strata_drawio, "RDA")]
+  # filter through all possibilities remaining, replace them with NS
+  
+  for(p in possibles) {
+    strata_drawio <- str_replace(strata_drawio, p, "NS")
+  }
+  
+  strata_fract <- fracts_all %>%
+    filter(strata == s) %>%
+    pivot_longer(extracted:overlap) %>%
+    mutate(value = (value * 100) %>%
+             round(1) %>%
+             paste0(., "%"))
+  
+  fract_names <- strata_fract %>%
+    pull(name)
+  
+  fract_value <- strata_fract %>%
+    pull(value)
+  
+  for(i in 1:length(fract_names)) {
+    strata_drawio <- str_replace(strata_drawio, fract_names[[i]], fract_value[[i]])
+  }
+  
+  strata_varexp <- varexp_all %>%
+    filter(strata == s) %>%
+    mutate(var_exp = (var_exp * 100) %>%
+             round(1) %>%
+             paste0(., "%"))
+  
+  axis_names <- strata_varexp %>%
+    pull(axis) %>%
+    paste("var_exp", ., sep = "-")
+  
+  axis_vals <- strata_varexp %>%
+    pull(var_exp)
+  
+  for(i in 1:length(axis_names)) {
+    strata_drawio <- str_replace(strata_drawio, axis_names[[i]], axis_vals[[i]])
+  }
+  
+  write_lines(strata_drawio, here::here(drawio_dir, paste0(s, ".drawio")))
+}
+```
+
+
+```{r complexity-iqr}
+strata_nested %>% 
+  unnest(data) %>% 
+  ggplot(aes(x = fct_reorder(strata, elev_cv, IQR), y = elev_cv)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# rgb map
+
+```{r}
+bec_dissolve <- read_sf(here::here("data", "shapefiles", "bec_dissolve.shp")) %>%
+  janitor::clean_names() %>%
+  select(zone)
+
+
+# non normalized
+loadings_rgb <- clean_loads %>% 
+  group_by(axis) %>%
+  pivot_wider(names_from = var,
+              values_from = axis_loading) %>%
+  ungroup() %>%
+  replace(is.na(.), 0) %>%
+  mutate(across(elev_cv:elev_p95, \(x) ifelse(x > 0.5, 0.5, x))) %>%
+  mutate(dhi_rgb = rgb(CumDHI, VarDHI, MinDHI),
+         pri_rgb = rgb(elev_p95, percentage_first_returns_above_2m, elev_cv, maxColorValue = 1),
+         mod_rgb = rgb(basal_area, total_biomass, gross_stem_volume, maxColorValue = 1)) %>%
+  select(strata, axis, percentage_first_returns_above_2m, elev_p95, elev_cv, ends_with("rgb")) %>%
+  pivot_longer(ends_with("rgb"))
+
+# normalized to max
+loadings_rgb <- clean_loads %>% 
+  group_by(var) %>%
+  mutate(axis_loading = axis_loading / max(axis_loading)) %>%
+  group_by(axis) %>%
+  pivot_wider(names_from = var,
+              values_from = axis_loading) %>%
+  ungroup() %>%
+  replace(is.na(.), 0) %>%
+  #mutate(across(elev_cv:elev_p95, \(x) ifelse(x > 0.5, 0.5, x))) %>%
+  mutate(dhi_rgb = rgb(CumDHI, VarDHI, MinDHI),
+         pri_rgb = rgb(elev_p95, percentage_first_returns_above_2m, elev_cv, maxColorValue = 1),
+         mod_rgb = rgb(basal_area, total_biomass, gross_stem_volume, maxColorValue = 1)) %>%
+  #select(strata, axis, percentage_first_returns_above_2m, elev_p95, elev_cv, ends_with("rgb")) %>%
+  pivot_longer(ends_with("rgb"))
+
+becs <- bec_normal %>%
+  pull(bec) %>%
+  unique()
+
+rgb_loads_split <- loadings_rgb %>%
+  filter(strata %in% becs) %>%
+  group_by(axis, name) %>%
+  group_split()
+```
+
+```{r}
+working <- rgb_loads_split[[1]]
+
+make_rgb_map <- function(tibble) {
+
+  rgb_cols = tibble %>%
+    pull(value) %>%
+    sort()
+  
+  bec_dissolve %>%
+    left_join(tibble, by = c("zone" = "strata")) %>%
+    mutate(ifelse(is.na(value), "grey", value)) %>%
+    ggplot() +
+    geom_sf(aes(geometry = geometry, fill = value), colour = NA) +
+    scale_fill_manual(values = rgb_cols) +
+    theme_void() +
+    theme(legend.position = "none")
+}
+
+rgb_maps <- map(rgb_loads_split, make_rgb_map)
+
+patchwork_rgbplots <- (rgb_maps[[3]] + rgb_maps[[2]]) / 
+                      (rgb_maps[[6]] + rgb_maps[[5]]) &
+  plot_annotation(tag_levels = "A")
+
+ggsave(here::here("outputs", "rgbplots_norm.png"), patchwork_rgbplots,
+       height = 6,
+       width = 8)
+
+print("png saved")
+
+ggsave(here::here("outputs", "rgbplots_norm.pdf"), patchwork_rgbplots,
+       height = 6,
+       width = 8)
+
+print("pdf saved")
+```
+
+
+
+```{r study-map}
+library(geodata)
+
+provinces <- geodata::gadm(country = "Canada", level = 1, path = here::here("data", "province"))
+
+prov_sf <- provinces %>%
+  st_as_sf() %>%
+  st_transform(3005)
+
+bbox <- prov_sf %>%
+  filter(NAME_1 == "British Columbia") %>%
+  st_bbox()
+
+usa <- geodata::gadm(country = "USA", level = 0, path = here::here("data", "usa")) %>%
+  st_as_sf()
+
+countries <- geodata::world(level = 0, path = here::here("data", "world")) %>%
+  st_as_sf()
+
+na_bbox <- countries %>%
+  filter(GID_0 == "USA" |
+         NAME_0 == "Canada") %>%
+  st_bbox()
+
+cad_bbox <- prov_sf %>%
+  st_transform(3348) %>%
+  st_bbox()
+
+countries_map <- countries %>%
+  filter(GID_0 == "USA" |
+         NAME_0 == "Greenland") %>%
+  st_transform(3348)
+
+lakes <- read_sf(here::here("data", "great_lakes", "great_lakes.shp")) %>%
+  st_transform(3348)
+
+bec_map <- ggplot() +
+  geom_sf(data = bcmaps::bc_bound(),
+          fill = "grey70", col = NA) +
+  geom_sf(
+    data = prov_sf %>% filter(NAME_1 != "British Columbia"),
+    fill = "grey70"
+  ) +
+  geom_sf(data = usa,
+          fill = "grey50") +
+  geom_sf(data = bec_dissolve %>%
+            left_join(keys$bec),
+          aes(fill = fct_reorder(zone_nm, zone)),
+          colour = NA) +
+  ggsci::scale_fill_igv() +
+  labs(fill = NULL,
+       linetype = NULL) +
+  coord_sf(
+    xlim = c(bbox$xmin - 300000, bbox$xmax),
+    ylim = c(bbox$ymin, bbox$ymax),
+    crs = 3005,
+    datum = 4326
+  ) +
+  theme_grey() +
+  theme(
+    panel.background = element_rect(fill = "#525252"),
+    panel.border = element_rect(colour = "black", fill = NA),
+    legend.position = c(.15, .4),
+    legend.background = element_rect(fill = NA),
+    legend.box.background = element_rect(fill = "white")
+  )
+
+#ggsave(here::here("outputs", "bec_map_no_inset.png"), bec_map, device = "png")
+
+inset = ggplot() +
+  geom_sf(data = countries_map, fill = "grey50") +
+  geom_sf(data = prov_sf %>% st_transform(3348) %>% filter(NAME_1 != "British Columbia"), fill = "grey70", size = 0.5) +
+  geom_sf(data = prov_sf %>% st_transform(3348) %>% filter(NAME_1 == "British Columbia"), fill = "#e5e5e5", size = 0.5) +
+  geom_sf(data = lakes, fill = "#525252") +
+  geom_sf(data = bbox %>% st_as_sfc %>% st_transform(3348), fill = NA, colour = "red", size = 2) +
+  coord_sf(xlim = c(cad_bbox$xmin - 300000, cad_bbox$xmax),
+           ylim = c(cad_bbox$ymin, cad_bbox$ymax)) +
+  theme_void() +
+  theme(panel.border = element_rect(colour = "black"),
+        panel.background = element_rect(fill = "#525252"))
+
+
+# map_inset <- ggdraw(bec_map) +
+#   draw_plot(inset, x = 0.7, y = 0.7, width = .28, height = .28)
+
+map_inset <- bec_map + inset_element(inset, left = 0.71,
+                                            bottom = 0.7,
+                                            right = 1,
+                                            top = 0.98, 
+                                     align_to = "plot")
+
+  
+ggsave(here::here("outputs", "bec_map.png"), plot = map_inset, device = "png", height = 7, width = 10)
+
+```
+
+```{r bec-clim-tab}
+climate_folder <- here::here("data", "climate")
+clim_vars <- climate_folder %>%
+  list.files(pattern = "csv$") %>%
+  tools::file_path_sans_ext()
+
+clim_vars <- clim_vars[!str_detect(clim_vars, "bec")]
+
+bec_clim <- climate_folder %>%
+  list.files(pattern = "bec.csv$",
+             full.names = T) %>%
+  read_csv() %>%
+  mutate(var = clim_vars %>% rep(16) %>% sort) %>%
+  select(bec = ZONE, mean = MEAN, var) %>%
+  pivot_wider(values_from = mean,
+              names_from = var)
+
+bec_tab <- keys$bec %>%
+  left_join(bec_clim, by = c("zone" = "bec")) %>%
+  select(-order) %>%
+  arrange(group, zone) %>%
+  relocate(group)
+
+write_csv(bec_tab, here::here("data", "climate.csv"))
+
+knitr::kable(bec_tab)
+```
+
+```{r}
+bec_normal %>%
+  select(-elev_stddev,-loreys_height,-percentage_first_returns_above_mean,-elev_mean) %>%
+  left_join(keys$bec, by = c("bec" = "zone")) %>%
+  pivot_longer(basal_area:VarDHI) %>%
+  ggplot(aes(x = value, y = bec, fill = group)) +
+  geom_boxplot() +
+  facet_wrap( ~ name)
+```
+

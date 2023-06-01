@@ -60,6 +60,8 @@ Run the sampling across each BEC zone
 ```{r run-sample}
 sample_loc <- here::here("data", "samples")
 
+dir.create(sample_loc, showWarnings = F)
+
 list.files(sample_loc, pattern = ".shp$")
 
 rmarkdown::render(here::here("scripts", "2_sampling.qmd"))

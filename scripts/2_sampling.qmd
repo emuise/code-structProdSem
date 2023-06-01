@@ -12,8 +12,8 @@ focal_for <- focal_rasts %>%
   str_subset(pattern = "forests") %>%
   rast()
 
-focal_lor <- focal_rasts %>%
-  str_subset(pattern = "loreys") %>%
+focal_p95 <- focal_rasts %>%
+  str_subset(pattern = "p95") %>%
   rast()
 
 focal_cov <- focal_rasts %>%
@@ -68,7 +68,7 @@ for (zoi in zones) {
   focal_for_mask <- focal_for %>%
     crop(zoi_rast)
   
-  focal_lor_mask <- focal_lor %>%
+  focal_p95_mask <- focal_p95 %>%
     crop(zoi_rast)
   
   focal_cov_mask <- focal_cov %>%
@@ -79,42 +79,48 @@ for (zoi in zones) {
   
   masked <- zoi_rast %>%
     mask(focal_for_mask) %>%
-    mask(focal_lor_mask) %>%
+    mask(focal_p95_mask) %>%
     mask(focal_cov_mask) %>%
     mask(change_mask_zoi)
   
   names(masked) <- "strata"
+  print("vlce sampling")
   
-  # print("vlce sampling")
+  start_vlce <- Sys.time()
   
-  # vlce_masked <- vlce %>%
-  #   crop(masked) %>%
-  #   mask(masked)
-  # 
-  # names(vlce_masked) <- "strata"
-  # 
-  # plot(vlce_masked)
-  # 
-  # vlce_interest_samples <-
-  #   sample_strat(
-  #     sraster = vlce_masked,
-  #     nSamp = 500,
-  #     mindist = 1000,
-  #     method = "random", # my focal analysis accounts for the quinnec method from sgsR
-  #     allocation = "equal"
-  #     )
-  # 
-  # 
-  # write_sf(vlce_interest_samples, save_name_vlce, overwrite = T)
+  vlce_masked <- vlce %>%
+    crop(masked) %>%
+    mask(masked)
+  
+  names(vlce_masked) <- "strata"
+  
+  plot(vlce_masked)
+  
+  vlce_interest_samples <-
+    sample_strat(
+      sraster = vlce_masked,
+      nSamp = 500,
+      mindist = 1000,
+      method = "random",
+      # my focal analysis accounts for the quinnec method from sgsR
+      allocation = "equal"
+    )
+  
+  
+  write_sf(vlce_interest_samples, save_name_vlce, overwrite = T)
+  
+  print(Sys.time() - start_vlce)
   
   print("bec sampling")
-
+  start_bec <- Sys.time()
+  
   bec_interest_samples <-
     sample_srs(raster = masked,
                nSamp = 3000,
                mindist = 1000) %>%
     mutate(zone = zoi)
-
+  
   write_sf(bec_interest_samples, save_name_bec, overwrite = T)
+  print(Sys.time() - start_bec)
 }
 ```
