@@ -1,0 +1,17 @@
+group,zone,zone_nm,ppt,tmax,tmin
+Alpine,BAFA,Boreal Altai Fescue Alpine,1357.3,1.9,-5.6
+Alpine,CMA,Coastal Mountain-heather Alpine,2878.1,4.5,-2.4
+Alpine,IMA,Interior Mountain-heather Alpine,1621.7,3.1,-4.2
+Coastal,CDF,Coastal Douglas-fir,986.1,12.9,5.9
+Coastal,CWH,Coastal Western Hemlock,2518.8,10.6,3.5
+Montane,ESSF,Engelmann Spruce -- Subalpine Fir,1087.6,5.3,-3.1
+Montane,MH,Mountain Hemlock,2666.2,7.2,-0.2
+Montane,MS,Montane Spruce,622.1,8.3,-2.5
+North,BWBS,Boreal White and Black Spruce,516.3,5.9,-5.3
+North,SBPS,Sub-Boreal Pine -- Spruce,480.1,9,-3.7
+North,SBS,Sub-Boreal Spruce,619.1,8.1,-2.3
+North,SWB,Spruce -- Willow -- Birch,730.7,3.6,-5.7
+South,BG,Bunchgrass,320,13.1,1.4
+South,ICH,Interior Cedar -- Hemlock,901.4,9.5,-0.3
+South,IDF,Interior Douglas-fir,476.8,10.6,-0.7
+South,PP,Ponderosa Pine,352.2,13.6,2.9

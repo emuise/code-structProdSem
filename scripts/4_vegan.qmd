@@ -1213,7 +1213,8 @@ bec_tab <- keys$bec %>%
   left_join(bec_clim, by = c("zone" = "bec")) %>%
   select(-order) %>%
   arrange(group, zone) %>%
-  relocate(group)
+  relocate(group) %>%
+  mutate(across(ppt:tmin, \(x) round(x, digits = 1)))
 
 write_csv(bec_tab, here::here("data", "climate.csv"))
 

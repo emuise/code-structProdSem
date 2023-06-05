@@ -56,7 +56,7 @@ author:
           address: 525 Superior Street
           city: Victoria, BC, Canada
           postal-code: V8V 1T7
-abstract: In today's changing climate and in light of the biodiversity crises, it is integral to be able to monitor the change in biodiversity at large scales. Key to this is the development of variables capable of monitoring biodiversity trends. One framework developped to tackle this problem is the Essential Biodviersity Variables (EBV) framework, which is designed to be analogous to the Essential Climate variables, and capable of monitoring biodiversity globally while also being complementary to one another. Within the EBV framework, there are six EBV classes, two of which are extremely well suited to be monitoring from satellite remote sensing. Among these with the potential to be satellite derived, the ecosystem structure and function classes stand out. Linkages between ecosystem structure and function have preivously been demonstrtated. In this paper, we seek to assess the complementarity of forest structure, as imputed across the entirety of British Columbia, Canada, with the Dynamic Habitat Indices, a yearly summary of productivity indices. Both datasets have been previously linked with biodiversity metrics across a range of scales. Using redundancy analysis, we find that forest structural attributes and the DHIs are decoupled from one another, with the forest structure datasets explaining 14% of the DHI variation. Further, we explore how the proportion of variance explained in the DHIs from primary strucutral attributres such as canopy height and canopy cover and modelled strucutral attributes such as aboveground biomass varies. We find there is generally large overlap between the two datasets. Overall, we find that forest structure as an ecosystem EBV and the DHIs as an ecosystem EBV are well suited to be complementary EBVs across large environmental gradients.
+abstract: Under a changing climate and in light of the biodiversity crises, monitoring change in biodiversity at broad scales has become ever more imperative. Key to regular biodiversity monitoring over time and space is the definition and selection of variables capable of accurately monitoring biodiversity trends. One framework is the Essential Biodiversity Variables (EBV), which are designed to be analogous to the Essential Climate variables, and capable of monitoring biodiversity globally while also being complementary to one another, within EBV classes. Five of six EBV classes have been shown to be well suited to be monitored using satellite remote sensing, with particular focus warranted on the ecosystem structure and function classes. In this paper, we seek to address the complementarity of variables describing forest structure, as imputed across the entirety of British Columbia, Canada, with variables representing ecosystem functioning, namely the Dynamic Habitat Indices, a yearly summary of productivity indices. Both sets of variables have previously been linked with biodiversity metrics across a range of scales. Using redundancy analysis, we find that forest structural attributes and the DHIs are essentially decoupled from each other, with the forest structure variables explaining 14% of the variation in the DHIs. Further, we explore how the proportion of variance explained in the DHIs varies with either primary structure variables, such as canopy height and cover, vs more complex modelled forest structural attributes, such as aboveground biomass and volume. Results suggest there is large overlap between the two types of forest structure variables suggesting little added benefit of derived attributes beyond height and cover, in this context. Overall, we find that forest structure as an ecosystem structure EBV and the DHIs as an ecosystem function EBV represent markedly different processes as observed by remote sensing and they are highly complementary across large environmental gradients, suggesting that in an earth-observation based monitoring program both are needed.
 keywords: 
   - remote sensing
   - landsat
@@ -110,13 +110,13 @@ Biodiversity Variables [EBVs, @pereira2013], designed as an analog to
 the Essential Climate Variables framework [@bojinski2014]. EBVs are
 designed to be global in scope, relevant to biodiversity information,
 feasible to use, and complementary to one another [@skidmore2021]. While
-it can be incredibly difficult, time consuming, and expensive to collect
-data on biodiversity across wide swaths of land and varying ecosystems,
-EBVs, which can be correlated to sampled biodiversity information, allow
-for the monitoring and asssessment of protected area effectiveness and
+it can be difficult, time consuming, and expensive to collect data on
+biodiversity across wide swaths of land and varying ecosystems, EBVs,
+which can be correlated to sampled biodiversity information, allow for
+the monitoring and assessment of protected area effectiveness and
 ecosystem health at large spatial scales [@hansen2021]. There are six
 EBV classes, each of which correspond to a different facet of
-biodiversity including species populations, species traits, community
+biodiversity, including species populations, species traits, community
 composition, ecosystem structure, ecosystem function, and genetic
 composition [@pereira2013].
 
@@ -137,7 +137,7 @@ for biodiversity trend assessment [@valdez2023].
 The two landscape-level EBVs (ecosystem structure and function) are well
 suited to be examined at large spatial scales using coarser spatial
 measurements, such as those taken from satellites by the Moderate
-Resolution Imaging Spectroradiometer [MODIS; @zhang2003], the Landsat
+Resolution Imaging Spectroradiometer [MODIS, @zhang2003], the Landsat
 imaging systems [@fisher2006], or Sentinel-2 [@helfenstein2022;
 @darvishzadeh2019] programs. These mid-resolution satellites can monitor
 processes at broader extents but the coarse spatial resolution removes
@@ -159,14 +159,14 @@ biomass; basal area), all of which can be assessed using lidar data
 [@coops2021]. A suite of these lidar-derived attributes have been used
 as local indicators of biodiversity, including simple metrics such as
 canopy cover and canopy height as well as derived metrics including
-vertical profiles, aboveground biomass [@lefsky1999; @guo2017;
-@coops2016]. Other second order derived metrics such as canopy texture,
-height class distribution, edges, and patch metrics have also been used
-to examine habitat and biodiversity at landscape scales [@bergen2009].
-Advances in satellite remote sensing processing have allowed 3D forest
-structure data to be imputed across wide spatial scales [@matasci2018;
-@coops2021] using data fusion approaches involving collected lidar data
-and optical/radar data.
+vertical profiles, aboveground biomass, or lidar derived indices
+[@lefsky1999; @guo2017; @coops2016]. Other second order derived metrics
+such as canopy texture, height class distribution, edges, and patch
+metrics have also been used to examine habitat and biodiversity at
+landscape scales [@bergen2009]. Advances in satellite remote sensing
+processing have now allowed 3D forest structure data to be imputed
+across wide spatial scales [@matasci2018; @coops2021] using data fusion
+approaches involving collected lidar data and optical/radar data.
 
 Increased forest structural complexity has been hypothesized to create
 additional niches, leading to increased species diversity [@bergen2009],
@@ -202,7 +202,7 @@ reflectance in remote sensing data [@berry2007; @radeloff2019].
 
 @berry2007 first explored this idea by proposing the linkage of
 intra-annual summaries of MODIS derived GPP to dispersive bird species.
-This idea was further refined into the Dynamic Habitat Indices [DHIs;
+This idea was further refined into the Dynamic Habitat Indices [DHIs,
 @coops2008], which have now been shown to be well suited to assess the
 three aforementioned hypotheses at global scales [@radeloff2019]. The
 cumulative DHI calculates the total amount of energy available in a
@@ -221,19 +221,19 @@ increased species richness [@williams2008].
 ## Biodiversity Monitoring with EBVs
 
 Biodiversity monitoring programs often require a range of information in
-order to accurately assess changes in ecosystem integrity
+order to accurately assess changes in ecological integrity
 [@lindenmayer2010]. Choosing datasets that are most closely related to
 the phenomenon of interest in a given application allows for direct
 connections to monitoring results and management actions [@pressey2021].
 With the advent of large-extent monitoring methods like satellite remote
 sensing, and a proliferation of potential EBVs datasets, it becomes
 important to assess the interrelationships between these datasets, and
-assess their complementary of the information to reduce duplication of
-efforts [@pereira2013; @skidmore2021]. When strong relationships are
-present between EBV classes, it becomes possible to assess the
-ecological relationships between potential EBVs. On the other hand, when
-datasets do not appear related, they may be well suited to be used in
-monitoring programs together, as complementary EBVs.
+assess their complementary of the information to reduce the duplication
+of efforts [@pereira2013; @skidmore2021]. When strong relationships are
+present between EBVs, it is possible to assess the ecological
+relationships between potential EBVs. On the other hand, when datasets
+do not appear related, they may be well suited to be used in monitoring
+programs together, as complementary EBVs.
 
 Linkages between forest ecosystem structure and function have been
 examined within a remote sensing context for over 20 years [@huete2002,
@@ -252,21 +252,21 @@ metrics of ecosystem productivity via the DHI framework, have yet to be
 fully examined.
 
 The overall goal of this paper is to assess patterns of forest ecosystem
-structure and function and their complementarity across a wide range of
-ecosystems encompassing significant environmental gradients. To do so,
-we synthesize data from moderate-scale remote-sensing derived metrics of
-forest structure, represented as both simple ALS-extracted metrics of
-canopy height, cover and vertical complexity, as well as modelled forest
-structure attributes including volume, and aboveground biomass, with a
-well-established remote sensing derived index on ecosystem function. Our
-first question is to examine how ecosystem structure and function
-complement one another across a large environmental gradient and then
-compare the simple and modelled representations of forest structure to
-different levels of ecosystem function. This question is important as it
-provides insights to the EBV community around complementarity of remote
-sensing metrics when describing the structure and function of ecosystems
-and proposes a method to examine potential overlap when generating
-remote sensing EBVs.
+structure and function, as observed using remote sensing technologies,
+and their complementarity across a wide range of ecosystems encompassing
+significant environmental gradients. To do so, we synthesize data from
+moderate-scale remote-sensing derived metrics of forest structure,
+represented as both simple ALS-extracted metrics of canopy height, cover
+and vertical complexity, as well as modelled forest structure attributes
+including volume, and aboveground biomass, with a well-established
+remote sensing derived index on ecosystem function. First, we examine
+how ecosystem structure and function complement one another across a
+large environmental gradient and then compare the simple and modelled
+representations of forest structure to different levels of ecosystem
+function. This question is important as it provides insights to the EBV
+community around complementarity of remote sensing metrics when
+describing the structure and function of ecosystems and proposes a
+method to examine potential overlap when generating remote sensing EBVs.
 
 Our second question examines the independent and shared relationships of
 ecosystem structure height and cover, with modelled forest structure, on
@@ -278,13 +278,13 @@ derived from the raw 3D point cloud vs modelled attributes, such as
 biomass and volume, which involve the use the statistical relationships
 with field data to transform the observations into more refined data
 products. Assessing which of these two (or combination of the two)
-approaches has stronger or weaker correlations with estimates of
-function provides insights into the choice of data used to build EBVs.
-Lastly, we examine how the primary and modelled structure attributes
-partition the variance of the DHIs within key biomes and forest types
-across a large environmental range, examining to what extent ecosystem
-and forest types impacts these relationships and thus providing insight
-into the applicability of these results globally.
+approaches has stronger or weaker relationships with estimates of
+ecosystem function provides insights into the choice of data used to
+build EBVs. Lastly, we examine how the primary and modelled structure
+variables partition the variance of the DHIs within key biomes and
+forest types across a large environmental range, examining to what
+extent ecosystem and forest types impacts these relationships and thus
+providing insight into the applicability of these results globally.
 
 # Methods
 
@@ -342,11 +342,10 @@ according to @wang2020 (@tbl-bec-group).
 
 ### Forest Structure
 
-We used a suite of forest structural attributes (canopy height, canopy
-cover, Lorey's height, overstory cover, basal area, aboveground biomass,
-gross stem volume, mean elevation, elevation standard deviation, and
-structural complexity \[coefficient of variation in elevation
-returns\]). This dataset was created at a 30 m spatial resolution
+We used a suite of forest structure variables (canopy height, canopy
+cover, structural complexity \[coefficient of variation of height
+returns\], basal area, aboveground biomass, and gross stem volume). This
+dataset was created for the year 2015 at a 30 m spatial resolution
 according to @matasci2018. In brief, the method used a set of lidar
 collections and field plots across Canada, and imputed the remaining
 pixels using a random forest k-Nearest Neighbour approach on
@@ -357,58 +356,69 @@ found in @matasci2018.
 ### Dynamic Habitat Indices
 
 We use an established set of indices of annual productivity shown to be
-related to global biodvierstiy trends: the Dynamic Habitat Indices
+related to global biodiversity trends: the Dynamic Habitat Indices
 [@radeloff2019]. The DHIs are a set of satellite remote sensing derived
 productivity variables that summarize the cumulative amount of available
 energy, the minimum available energy, and the variation in available
 energy throughout a given year [@berry2007; @radeloff2019]. The DHIs
-have previously been produced at a global extent using MODIS imagery ,
-and have been used to assess alpha [@radeloff2019] and beta[@andrew2012]
-diversity, species abundances [@razenkova2023], and construct novel
-ecoregionalizations [@coops2009]; @andrew2013\] . Recent studies have
-began to examine how these indices can be constructed at a finer spatial
-resolution by using multi-annual Landsat imagery to generate a single
-synthetic year of monthly observations [@razenkova2022].
+have previously been produced at a global extent using MODIS imagery,
+and have previously been used to assess alpha [@radeloff2019] and beta
+[@andrew2012] diversity, species abundances [@razenkova2023], and
+construct novel ecoregionalizations [@coops2009; @andrew2013] . Recent
+studies have began to examine how these indices can be constructed at a
+finer spatial resolution by using multi-annual Landsat imagery to
+generate a single synthetic year of monthly observations
+[@razenkova2022].
 
-The DHIs were calculated according to [@razenkova2022; Razenkova et al.,
+The DHIs were calculated according to [@razenkova2022, Razenkova et al.,
 In Press] for all of terrestrial British Columbia. In brief, Google
 Earth Engine [@gorelick2017] was used to obtain all valid Landsat pixels
-for a given study area, filtering out pixels containing shadows, slouds,
-and cloud shadows within each image [@zhu2012], then calculated the NDVI
-for each pixel in each image. They then calculated the median NDVI value
-for each month across the ten year time span (2011-2020) to generate a
-synthetic year of monthly data. The sum, minimum, and coefficient of
-variation across this synthetic year of NDVI values is then calculated.
-More detailed information can be found in Razenkova et al. (In Press).
+for a given study area, filtering out pixels containing shadows, clouds,
+and cloud shadows within each image using the fmask algorithm
+[@zhu2012], then calculated the NDVI for each pixel in each image. They
+then calculated the median NDVI value for each month across a ten year
+time span (2011-2020) to generate a synthetic year of monthly data. The
+sum, minimum, and coefficient of variation across this synthetic year of
+NDVI values was then calculated. More detailed information can be found
+in Razenkova et al. (In Press).
 
-## Sampling
+# Sampling
 
-We conducted model-based sampling across the sixteen forest-dominated
-ecosystems found within British Columbia \[BC figure reference, I have
-not made this figure yet\]. Samples were randomly selected within each
-BEC zone, in undisturbed pixels. Each sampled pixel had to have a
-forested land cover class (coniferous, deciduous, mixed-wood, or
-wetland-treed), and be surrounded by the same land cover class. The land
-cover mask was generated following [@hermosilla2022] using a
-best-available-pixel composite, and an inverse-distance weighted random
-forest approach across Canada. Additionally, each pixel had to have a
-coefficient of variation less than 0.5 in surrounding pixels in the two
-simplest forest structural attributes, canopy height and canopy cover. A
-maximum of 3000 samples were sampled in each BEC zone with a 1 km
-minimum sampling distance to reduce the effects of spatial
-autocorrelation. All variables were natural-log transformed and
-standardized. Variables containing zeros were natural-log plus one
+We implement two sampling schemes -- one for ecosystems, and one for
+forest types -- across the terrestrial ecosystems of British Columbia
+(@fig-study-map). For both sampling schemes, each individual sample was
+taken from a forested pixel which was surrounded by the same land cover
+class. The land cover class map was generated for the year 2015
+following [@hermosilla2022] using a best-available-pixel composite, and
+an inverse-distance weighted random forest classification approach
+across Canada. Additionally, each pixel had to have a coefficient of
+variation less than 0.5 in surrounding pixels in the two simplest forest
+structure variables, canopy height and canopy cover. A minimum sampling
+distance of 1 km was implemented to reduce the effects of spatial
+autocorrelation, and samples that had been disturbed in the last 30
+years were discarded by using a disturbance mask generated for the
+forested ecosystems of Canada by @hermosilla2016.
+
+The ecosystem sampling scheme was implemented by randomly sampling
+pixels matching the above criteria within each BEC zone of British
+Columbia, up to a maximum of 3000 pixels, regardless of forest class.
+The forest type sampling scheme was similar in that each BEC zone was
+sampled, however, it implemented stratified sampling on each forest
+class, up to a maximum of 500 pixels per BEC zone and forest class.
+
+Each sampling scheme was natural-log transformed and standardized to
+Z-scores. Variables containing zeros were natural-log plus one
 transformed. Sampling was conducted in R [@R-base] version 4.2.2 using
 the **sgsR** package [@R-sgsR]. Focal analyses for the land cover
-classes and coefficient of variation were calculated in Python version
-3.9.
+classes and coefficient of variations of canopy height and cover were
+calculated in Python version 3.9.
 
 ## Analysis
 
 ### Redundancy Analysis and Variation Partitioning
 
 Redundancy analysis (RDA) and variation partitioning were used to relate
-the primary and modelled forest structure attributes to ecosystem
+the primary and modelled forest structure variables to ecosystem
 function across a broad environment range. Redundancy analysis functions
 similarly to a multiple linear regression, except it is capable of
 predicting multiple response variables. It accomplishes this by first
@@ -417,27 +427,27 @@ response variable, then running a principle component analysis on the
 residuals from each multiple linear regression. This reduces the
 dimensionality of the output, and allows the relationship strength to be
 assessed by calculating the loadings of both predictor and response
-variables on the RDA axes. Partial redundancy analysis function
+variables on the RDA axes. Partial redundancy analysis functions
 similarly, except also considers co-variates [@legendre2012]. Redundancy
 analysis has widely been used in community ecology where environmental
 variables of interest are compared to species composition
 [@blanchet2014; @kleyer2012] and has similarities to partial least
 squares regression -- namely, their multivariate approach, usage of
-dimensionality reduction, and linearity assumption -- which is commonly
+dimensionality reduction, and linearity assumptions -- which is commonly
 used in remote sensing literature [@roelofsen2014; @burnett2021].
 
 Following the RDA, we employ ANOVAs to determine which axes are
 significant, and calculate the proportion of variance attributable to
 each axis using the eigenvalues generated from the RDA. We calculate
-axis loadings for both predictor and response variables by calculating
-the correlation between the variables and the RDA axes. Axis loadings
-represent the relationship between a given variable and the RDA axis. We
-only consider and display significant axes. To visualize the RDA for
-both predictor and response variables, we display the results as path
-diagrams, with loadings from each predictor to the RDA axis to the
-response variables. The variance explained by each axis is also
-displayed in the RDA box (@fig-rda-var). All RDA calculations were done
-in R [@R-base] version 4.2.2 using the **vegan** package [@R-vegan].
+axis loadings for both forest structure and DHI variables by calculating
+the correlation between each variable and the RDA axes. Forest strcuture
+variable axis loadings represent the strength of relationship between a
+given variable and the RDA axis, while DHI loadings indicate what is
+being represented by the RDA axes. We only consider and display
+significant axes. To visualize the RDA for both predictor and response
+variables, we display the results as path diagrams, with loadings from
+each predictor to the RDA axis to the response variables. The variance
+explained by each axis is also displayed in the RDA box (@fig-rda-var).
 
 Variation partitioning is an extension of partial RDA which can assess
 the overlap between the explanatory power of two datasets by utilizing
@@ -446,13 +456,14 @@ predictor, and which is considered the co-variate [@legendre2012].
 Variation partitioning is traditionally displayed using a Venn diagram,
 in which the percentage of variance explained by each dataset is in a
 circle, and the overlap between circles represents the overlap in
-variance explained. All variation partition analyses were done in R
-[@R-base] version 4.2.2 using the **vegan** package [@R-vegan].
+variance explained.
 
-RDA and variation partitioning analyses were conducted for all samples,
-as well as individually across each BEC zone and forest type. The
-results were aggregated to BEC zone groups (see @sec-study-area for
-visualization).
+RDA and variation partitioning analyses were conducted for all samples
+in the ecosystem sampling scheme, as well as individually across each
+ecosystem and forest type. The results were aggregated to BEC zone
+groups (see @sec-study-area). All RDA and variation partitioning
+calculations were done in R [@R-base] version 4.2.2 using the **vegan**
+package [@R-vegan].
 
 All code associated with the processing and analysis is available at
 https://github.com/emuise/code-structProdSem.
@@ -462,33 +473,33 @@ https://github.com/emuise/code-structProdSem.
 
 ::: {.cell}
 ::: {.cell-output-display}
-![A) Axis loadings from redundancy analysis of primary and modelled forest structural attributes on the dynamic habitat indices. B) Results from variation partitioning of primary and modelled forest structural attributes on the DHIs. Both visualized analyses are across all collected samples. See supplementary information for results from each BEC zone and forest type.](../../outputs/all_data_figure.drawio.png){#fig-rda-var}
+![A) Axis loadings from redundancy analysis of primary and modelled forest structure variables on the dynamic habitat indices. B) Results from variation partitioning of primary and modelled forest structure variables on the DHIs. Both visualized analyses are across all collected samples. See supplementary information for results from each BEC zone and forest type.](../../outputs/all_data_figure.drawio.png){#fig-rda-var}
 :::
 :::
 
 
 To examine the relationship between ecosystem structure and function
 across a large environmental gradient, we present the results of a
-redundancy analysis of forest structural attributes on the dynamic
-habitat indices across the entire sampled dataset in @fig-rda-var A.
-While there are three RDA axes associated with the full dataset, the
-third axis explains 0.05% of the variance in the DHIs, and as a result
-it is not shown. The first axis is strongly represents all the DHIs
-(loadings \> 0.85 for all DHIs), and has the strongest loadings from
-canopy cover, basal area, aboveground biomass, and gross stem volume.
-The other input attributes (canopy height, structural complexity, and
-Lorey's height) have smaller loadings. The second axis primarily
-represents the seasonality (Minimum and Variation DHI) of the DHIs, with
-a very small loading on the Cumulative DHI, and is primarily driven by
-canopy cover and complexity (@fig-rda-var A).
+redundancy analysis of forest structure variables on the dynamic habitat
+indices across the entire sampled dataset in @fig-rda-var A. While there
+are three RDA axes associated with the full dataset, the third axis
+explains 0.05% of the variance in the DHIs, and as a result is not
+shown. The first axis strongly represents all the DHIs (loadings \> 0.85
+for all DHIs), with the highest loadings from canopy cover, basal area,
+aboveground biomass, and gross stem volume. The other input variables
+(canopy height, structural complexity) have smaller loadings. The second
+axis primarily represents the seasonality (Minimum and Variation) of the
+DHIs, with no correlation to Cumulative DHI, and has the highest
+loadings from canopy cover and complexity, with the remainder of the
+forest structure variables having negligible influences(@fig-rda-var A).
 
 The results from the variation partitioning analysis (@fig-rda-var B)
 show that the majority of the variance explained by the input datasets
-is shared across both primary and modelled attributes. In total, only
-14% of the variation in the DHIs is explained by the structural
-information, with 8.2% of this being from overlap between the datasets.
-The primary and modelled attributes explain 3 and 2.8% of the variation
-on their own, respectively (@fig-rda-var B).
+is shared across both primary and modelled forest structure variables.
+Of the 13.4% of the variation in the DHIs being explained by the
+structural information, 9.4% is common across both sets of structure
+variables. The primary and modelled variables only explain 2.7% and 1.3%
+of the variation uniquely (@fig-rda-var B).
 
 
 ::: {.cell}
@@ -499,179 +510,180 @@ on their own, respectively (@fig-rda-var B).
 
 
 Further, we wanted to examine the strength of the relationship between
-the DHIs and primary structural attributes vs modelled structural
-attributes across the forest types and ecosystems of the province.
-@fig-radar A and B show the axis loadings for structural attributes and
-the DHIs, respectively. Across the BEC zone groups, the loadings are
-generally similar in the structural attributes. @fig-radar C shows
-boxplots of individual BEC zone loadings for structural attributes and
-the DHIs. Across the BEC zones, canopy cover is generally the strongest
-predictor loading of the first RDA axis, and structural complexity is
-generally the weakest predictor loading. The exception is in deciduous
-forest types (mixed-wood and broadleaf), where structural complexity is
-the largest axis loading, alongside canopy cover (@fig-radar C). The
-second axis has smaller significant loadings. The loadings of the DHIs
-in the first axis are generally larger than the loadings for the
-structural attributes, with the cumulative DHI often being the strongest
-loading overall. In alpine BEC zones, the minimum DHI loading is smaller
-than the variation and cumulative DHIs. The secondary RDA axis is
-primarily driven by variation in the minimum DHI, with medium loadings
-in the variation DHI, and small loadings in the cumulative DHI
-(@fig-radar B & C).
+the DHIs and primary structure variables vs modelled structure variables
+across the forest types and ecosystems of the province. @fig-radar A and
+B show the axis loadings for structure variables and the DHIs,
+respectively. Across the BEC zone groups, the loadings are generally
+similar in the structure variables. Variations in the DHIs in the
+southern ecosystems, which are typically warmer and drier, have low or
+non-significant variance explained by the structure variables.
+Conversely, across the forest types (coniferous, broadleaf, mixed wood,
+and wetland-treed) structural complexity is often the highest loading.
+The loadings for the DHIs in the first axis are generally larger than
+the loadings for the structure variables, with the cumulative DHI often
+being the strongest loading overall. In alpine BEC zones, the minimum
+DHI loading is smaller than the variation and cumulative DHIs. In
+contrast to the first RDA axis, the secondary RDA axis is primarily
+driven by variation in the minimum DHI, with medium loadings in the
+variation DHI, and small loadings in the cumulative DHI (@fig-radar A &
+B). @fig-radar C shows boxplots of individual BEC zone loadings for
+structure variables and the DHIs. Across the province, canopy cover
+generally has the highest loadings, with structural complexity generally
+being the weakest.
 
 
 ::: {.cell}
 ::: {.cell-output-display}
-![Stacked bar plot proportion of DHI variation explained by extracted, modelled, and the overlap between primary and modelled structural attributes.](../../outputs/fracts_bar_plot.png){#fig-fracts-bar}
+![Stacked bar plot proportion of DHI variation explained by extracted, modelled, and the overlap between primary and modelled structure variables.](../../outputs/fracts_bar_plot.png){#fig-fracts-bar}
 :::
 :::
 
 
 @fig-fracts-bar shows stacked bar plots of the proportion of variation
 explained in the DHIs by primary, modelled, and the overlap between
-primary and modelled attributes. Running the analysis by forest types
-generally results in higher amounts of variance explained, this is
-especially prevalent in deciduous forest types (mixed-wood and
-broadleaf). The overlap between modelled and primary attributes is
-generally higher than each dataset on their own, with the exception
-being mixedwood forests and the Coastal Western Hemlock BEC zone.
-Notably, the variation explained by the primary and modelled attributes
-is commonly presented through a single RDA axis, which generally
-corresponds to overall productivity through the year (@fig-radar).
-Generally, the DHIs are decoupled from the structural attributes,
-regardless of whether the attribute is directly extracted from the point
-cloud or is a modelled variable.
+primary and modelled variables. Forest types sampled across the
+environmental gradient generally show higher amounts of variance
+explained, which is especially prevalent in broadleaf and mixed wood
+forests. The overlap between modelled and primary structure variables is
+generally than the primary and modelled attributes individually, with
+the exception being mixed wood and broadleaf forests and colder, wetter
+forests. Higher elevation and colder forest stands have larger amounts
+of DHI variance explained by the forest structure variables than other
+environments in the province. Notably, the variation explained by the
+primary and modelled structure variables is commonly presented through a
+single RDA axis, which generally corresponds to overall productivity
+through the year (@fig-radar). Overall, the DHIs are decoupled from the
+structure variables, as shown by the overall variance explained being
+under 30%, regardless of whether the attribute is directly extracted
+from the point cloud or is a modelled variable.
 
 
 ::: {.cell}
 ::: {.cell-output-display}
-![False colour maps of axis loadings for the first RDA axis (top) and second RDA axis (bottom). All colour values are normalized to the maximum loading of each variable. A and D show axis loadings for canopy height (r), canopy cover (g) and structural complexity (b). B and E show axis loadings for basal area(r), total biomass (g) and gross stem volume (b). C and F show axis loadings for the cumulative DHI (r), variation DHI (g) and minimum DHI (b).](../../outputs/rgb_normalized.png){#fig-fcc}
+![False colour maps of axis loadings for the first RDA axis (top) and second RDA axis (bottom). All colour values are normalized to the maximum loading of each variable. A and D show axis loadings for canopy height (r), canopy cover (g) and structural complexity (b). B and E show axis loadings for basal area(r), total biomass (g) and gross stem volume (b). C and F show axis loadings for the cumulative DHI (r), variation DHI (g) and minimum DHI (b).](../../outputs/rgb_norm_edit.png){#fig-fcc}
 :::
 :::
 
 
 @fig-fcc shows false colour composites of the primary (A & C) and
-modelled (B & D) loadings across the BEC zones of British Columbia. In
-the first RDA axis there is spatial variation in the primary attributes,
-with interior zones being primarily driven by canopy cover (green), the
-coastal regions having a strong structural complexity loading, and the
-boreal in the northwest having the strongest loadings in canopy height
-(@fig-fcc A). The modelled attributes generally show gray-scale colour,
-indicating that basal area, total biomass, and gross stem volume do not
-explain additional variation in the DHIs (@fig-fcc B). Only four zones
-have a secondary RDA axis (@fig-radar C). These zones have been
-spatially represented in @fig-fcc C & D. Boreal white and black spruce,
-interior Douglas-fir, mountain hemlock, and montane spruce have a
-secondary axis, with no spatial pattern associated with the presence of
-a secondary axis. Canopy cover has the strongest loading in the boreal
-white and black spruce, while the secondary axis in the remaining three
-zones have the highest loadings in canopy height (@fig-fcc D). Again,
-the modeled attributes are in grayscale, indicating similar loadings
-across the three modelled attributes (@fig-fcc E). The DHIs in the
-second axis are primarily driven by the minimum DHI, with low loadings
-on the cumulative DHI, and moderate loadings on the variation DHI (
-@fig-fcc F; @fig-radar C).
+modelled (B & D) loadings across the ecosystems of British Columbia. In
+the first RDA axis there is spatial variation in the primary structure
+variables, with interior zones being primarily driven by canopy cover
+(green), the coastal regions having strong structural complexity and
+canopy height loadings, and the boreal in the northwest having the
+strongest loading in canopy height (@fig-fcc A). The modelled structure
+variables generally show gray-scale colour, indicating that basal area,
+total biomass, and gross stem volume explain similar variation in the
+DHIs (@fig-fcc B). All ecosystems with a secondary axis are located away
+from the Pacific coast in cooler, drier environments. Canopy cover has
+the strongest secondary axis loading in the northern boreal stands,
+while the secondary axis in the remaining four zones have the highest
+loadings in canopy height (@fig-fcc C). Again, the modeled structure
+variables are in grayscale, indicating similar loadings across the three
+modelled structure variables (@fig-fcc E).
 
 # Discussion
 
-It is integral to consider the complementarity of potential EBVs
-[@pereira2013; @skidmore2021] . Forest structure and productivity have
-been shown to be linked in multiple studies spanning three decades
+Complementarity plays a crucial role in the context of Essential
+Biodiversity Variables (EBVs) and holds significant importance for
+monitoring and understanding biodiversity [@pereira2013; @skidmore2021].
+At the ecosystem scale, the interconnectedness and interdependence of
+ecosystem structure and function is important to recognize and
+disentangle. In forested environments, forest structure and productivity
+have been shown to be linked in multiple studies spanning three decades
 [@ali2019; @myneni1994], however, a linkage between intra-annual
-production and forest structure has not been shown. In this study, we
-use statistical analyses from community ecology - namely redundancy
-analysis and variation partitioning - to assess the complementarity of
-forest structure and yearly productivity summaries. We find that the
-datasets do not strongly overlap, with forest structure explaining 14%
-of the variation in the dynamic habitat indices in samples taken across
-the entirety of British Columbia (@fig-rda-var B). This indicates that
-they are suitable to be used in tandem with one another when used as
-ecosystem EBVs.
+production and forest structure has yet to be shown. In this study, we
+use statistical analyses commonly used in community ecology - namely
+redundancy analysis and variation partitioning - to assess the
+complementarity of forest structure and yearly productivity summaries.
+While RDA is common in the ecological literature, this analysis
+represents one of the first times this technique has been applied to
+assess the complimentary of proposed satellite-derived EBVs. We find
+that the example EBVs do not strongly overlap, with forest structure
+explaining 13.4% of the variation in the DHIs in samples taken across a
+broad environmental gradient (@fig-rda-var B). This indicates that they
+are suitable to be used in tandem with one another when used as
+ecosystem EBVs across wide environmental gradients.
 
-Across most of British Columbia's ecosystem, we identified a single RDA
-axis associated with the DHIs, encompassing the overall productivity
-(@fig-rda-var A). Within this first axis, the strongest loadings were
-canopy cover and the modelled attributes. When a second axis was
-significant, it consistently had strong loadings on the minimum and
-variation DHIs indicating a complex relationship within the DHIs in
-certain ecosystems. This secondary axis has smaller axis loadings
-associated with the primary and modelled attributes, with the strongest
+Across most of British Columbia's ecosystems, we identified a single RDA
+axis associated with the DHIs, encompassing the variation in annual
+productivity (@fig-rda-var A). Within this first axis, the strongest
+loadings were canopy cover and the modelled structure variables. In
+Alpine ecosystems the relationship between the first axis and the
+Minimum DHI was lowest, likely due to the low amount of variation in the
+Minimum DHI in these ecosystems. When a second axis was significant, it
+consistently had strong loadings on the minimum and variation DHIs,
+which indicates a complex internal productivity relationship in certain
+ecosystems. This secondary axis has smaller axis loadings associated
+with the primary and modelled structure variables, with the strongest
 loadings being canopy cover and structural complexity across the entire
 dataset (@fig-rda-var A).
 
-We also sought to explore whether modelled attributes (basal area, gross
-stem volume, aboveground biomass, and Lorey's height) add additional
-explanatory information when predicting the DHIs, as compared to primary
-forest structural attributes. We generally found that canopy cover had
-the largest axis loadings in the first RDA axis (@fig-radar), which
-corresponds with canopy cover and LAI intercepting radiation from the
-sun influencing the amount of energy available in the environment
-[@knyazikhin1998]. Modelled attributes such as basal area, aboveground
-biomass, and gross stem volume shared similar loading magnitudes across
-the range of studied ecosystems, indicating they do not add additional
-value when compared to one another (@fig-radar C; @fig-fcc B). The
-loadings between the modelled attributes and canopy cover are often
-similar, and as such, we recommend utilizing the attributes derived
-directly from the point cloud in the case of ALS data, or selecting a
-single modelled attribute.
+Our second question sought to explore whether modelled structure
+variables (basal area, gross stem volume, aboveground biomass) add
+additional explanatory information when predicting the DHIs, as compared
+to primary forest structure variables. We generally found that canopy
+cover had the largest axis loadings in the first RDA axis (@fig-radar).
+Modelled structure variables such as basal area, aboveground biomass,
+and gross stem volume shared similar loading magnitudes across the range
+of studied ecosystems, indicating they do not add additional value when
+utilized with one another (@fig-radar C; @fig-fcc B). The loadings
+between the modelled structure variables and canopy cover are often
+similar, and as such, in this context we recommend utilizing the
+structure variables derived directly from the point cloud in the case of
+ALS data, or selecting a single modelled attribute, such as aboveground
+biomass alone [@duncanson2022].
 
-During the analysis we noticed a high amount of total variance explained
+During the analysis we found a higher amount of total variance explained
 in deciduous forests (mixed-wood and broadleaf) when compared to the
-other two forest types and most BEC zones. This could possibly be due to
-the loss of canopy cover during the winter being linked more closely to
-the DHIs, which are an annual summary of productivity, and not taken at
-a single time point, reducing the potential temporal mismatch between
-the two datasets. Further, the strongest loadings in these two forest
-types was vertical structural complexity, rather than canopy cover. This
-could indicate that in deciduous forests, additional leaf density at
-multiple layers is more important for productivity than canopy cover.
-
-BEC zones dominated by coniferous forests tended to have higher amounts
-of variance explained by the structural attributes. This appears to be
-contrary to the observation that mixed-wood and broadleaf forests have
-much higher amounts of variation explained, and an analysis consisting
-solely of coniferous pixels has relatively low amounts of variance
-explained (). This could be due to the large range in ecosystem
-variation across the province in coniferous forests. Running a similar
-analysis across each forest type and each BEC zone could increase the
-amount of explained variation, as the structural datasets would likely
-have less internal variation.
+other two forest types and most BEC zones (@fig-fracts-bar). This could
+potentially be due to the temporal linkages between canopy cover in
+deciduous forests and productivity. In evergreen coniferous forests
+where canopy cover is present year-round, there is likely a temporal
+mismatch between forest structure variables and the DHIs. Further, the
+strongest loadings in these two forest types was vertical structural
+complexity, rather than canopy cover. This indicates that the DHIs are
+more closely related to forest structure in deciduous forests, however
+even there significant decoupling remains.
 
 Finally, we explored the amount of variation explained by primary vs
-modelled attributes, as well as their overlap (). We generally found
-that the overlap between the primary and modelled attributes explained
-most of the variation, with some exceptions, indicating that using
-either set of forest structural attributes is suitable when monitoring
-biodiversity.
+modelled structure variables, as well as their overlap
+(@fig-fracts-bar). We generally found that the overlap between the
+primary and modelled structure variables explained most of the
+variation, with some exceptions, indicating that using either set of
+forest structure variables may be suitable when monitoring biodiversity.
+The exceptions are especially prominent in the broadleaf and mixed wood
+forest classes, as well as cool, highly productive forests where there
+is no variation explained by the overlap between the two datasets. The
+majority of the variance explained in the broadleaf and mixed wood
+forests was in the forest structure variables derived directly from the
+point cloud. This was expected, as the modelled structure variables are
+calculated based on the derived structure variables as well as site
+index and ancillary information [@coops2021].
 
 Recent advances in creating synthetic yearly observations have allowed
-the DHIs to be generated at a Landsat scale (30 m), rather than the
-previously used 1 km DHIs derived from MODIS [@radeloff2019;
-@razenkova2022]. This allows these datasets to be matched and analyzed
-with other datasets generated from the Landsat archive. This represents
-a significant advancement when assessing the utility of EBVs, as the 30
-m scale is well suited to examine a range of ecological applications,
-including forest structure and productivity [@cohen2004].
+the DHIs to be generated at a finer scale (30 m; Razenkova et al., In
+Press), rather than the previously used 1 km DHIs derived from MODIS
+[@radeloff2019; @razenkova2022]. This represents a significant
+advancement when assessing the utility of EBVs, as the 30 m scale is
+well suited to examine a range of ecological applications, including
+forest structure and productivity, and more closely approximates the
+scale at which species perceive habitat [@cohen2004; @kennedy2014]. In
+addition to more closely matching the scale of ecological phenomenon,
+this allows these datasets to be matched and analyzed with other
+datasets generated from the Landsat archive.
 
 In conclusion, we used redundancy analysis and variation partitioning to
-assess the complimentarity of two potential EBV datasets - forest
+assess the complementarity of two potential EBV datasets - forest
 structure and the DHIs. We also separated the forest structure datasets
-into primary and modelled attributes in order to assess the need to
-develop more complex structural attributes, or if base data derived
-directly from lidar datasets was suitable. We found that the structural
-attributes are not strongly related to the DHIs, indicating that they
-are suitable to be used together as ecosystem scale EBVs when monitoring
+into primary and modelled structure variables in order to assess the
+need to develop more complex structure variables, or if data derived
+directly from lidar datasets was suitable. We found that the structure
+variables are not strongly related to the DHIs, indicating that they are
+suitable to be used together as ecosystem scale EBVs when monitoring
 forest environments. We also found that variation explained by the
-overlap between primary and modelled attributes was often higher than
-the variation explained by either individually.
-
-Further research could assess the importance on intra-annual
-productivity vs the single time point of forest structure, which does
-not strongly change throughout the year (barring large disturbances).
-
-While RDA is common in the ecological literature, this analysis
-represents one of the first times this technique has been applied to
-assess the complimentary of proposed EBVs.
+overlap between primary and modelled structure variables was often
+higher than the variation explained by either individually.
 
 \newpage
 
