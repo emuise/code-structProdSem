@@ -1,0 +1,183 @@
+layer,value,count,bec
+1,Water,33338,BAFA
+1,Snow/Ice,11152292,BAFA
+1,Rock/Rubble,13720888,BAFA
+1,Exposed/Barren Land,32665846,BAFA
+1,Bryoids,21854,BAFA
+1,Shrubs,5917970,BAFA
+1,Wetland,11174,BAFA
+1,Wetland-Treed,1968,BAFA
+1,Herbs,3497937,BAFA
+1,Coniferous,2102393,BAFA
+1,Broadleaf,130782,BAFA
+1,Mixed Wood,17074,BAFA
+1,Water,182627,BG
+1,Snow/Ice,7,BG
+1,Rock/Rubble,1742,BG
+1,Exposed/Barren Land,923917,BG
+1,Shrubs,164859,BG
+1,Wetland,3775,BG
+1,Wetland-Treed,1057,BG
+1,Herbs,1232458,BG
+1,Coniferous,189661,BG
+1,Broadleaf,11633,BG
+1,Mixed Wood,447,BG
+1,Water,3969747,BWBS
+1,Snow/Ice,33637,BWBS
+1,Rock/Rubble,40024,BWBS
+1,Exposed/Barren Land,4394230,BWBS
+1,Bryoids,35522,BWBS
+1,Shrubs,7804522,BWBS
+1,Wetland,14533852,BWBS
+1,Wetland-Treed,16228741,BWBS
+1,Herbs,7692848,BWBS
+1,Coniferous,99715243,BWBS
+1,Broadleaf,25710707,BWBS
+1,Mixed Wood,2102431,BWBS
+1,Water,439170,CDF
+1,Rock/Rubble,1,CDF
+1,Exposed/Barren Land,402088,CDF
+1,Shrubs,7772,CDF
+1,Wetland,2566,CDF
+1,Wetland-Treed,16350,CDF
+1,Herbs,724635,CDF
+1,Coniferous,874908,CDF
+1,Broadleaf,159384,CDF
+1,Mixed Wood,22,CDF
+1,Water,22382,CMA
+1,Snow/Ice,15808560,CMA
+1,Rock/Rubble,1900083,CMA
+1,Exposed/Barren Land,14924601,CMA
+1,Bryoids,51,CMA
+1,Shrubs,3220401,CMA
+1,Wetland,3315,CMA
+1,Wetland-Treed,1282,CMA
+1,Herbs,536596,CMA
+1,Coniferous,2926416,CMA
+1,Broadleaf,215908,CMA
+1,Mixed Wood,13976,CMA
+1,Water,8724086,CWH
+1,Snow/Ice,67764,CWH
+1,Rock/Rubble,181838,CWH
+1,Exposed/Barren Land,3754773,CWH
+1,Shrubs,7117684,CWH
+1,Wetland,1405142,CWH
+1,Wetland-Treed,1042856,CWH
+1,Herbs,7107596,CWH
+1,Coniferous,73541004,CWH
+1,Broadleaf,7643581,CWH
+1,Mixed Wood,772731,CWH
+1,Water,560742,ESSF
+1,Snow/Ice,1113257,ESSF
+1,Rock/Rubble,2479713,ESSF
+1,Exposed/Barren Land,22767381,ESSF
+1,Bryoids,1676,ESSF
+1,Shrubs,20906612,ESSF
+1,Wetland,784293,ESSF
+1,Wetland-Treed,86339,ESSF
+1,Herbs,5318188,ESSF
+1,Coniferous,133423938,ESSF
+1,Broadleaf,7099150,ESSF
+1,Mixed Wood,954881,ESSF
+1,Water,3659906,ICH
+1,Snow/Ice,2847,ICH
+1,Rock/Rubble,58652,ICH
+1,Exposed/Barren Land,1101450,ICH
+1,Shrubs,3660208,ICH
+1,Wetland,849761,ICH
+1,Wetland-Treed,41952,ICH
+1,Herbs,1998281,ICH
+1,Coniferous,46492723,ICH
+1,Broadleaf,4362121,ICH
+1,Mixed Wood,1018049,ICH
+1,Water,1536617,IDF
+1,Snow/Ice,1155,IDF
+1,Rock/Rubble,28756,IDF
+1,Exposed/Barren Land,3527770,IDF
+1,Shrubs,6474226,IDF
+1,Wetland,1530189,IDF
+1,Wetland-Treed,220732,IDF
+1,Herbs,3467593,IDF
+1,Coniferous,30068906,IDF
+1,Broadleaf,537211,IDF
+1,Mixed Wood,151506,IDF
+1,Water,663,IMA
+1,Snow/Ice,3198240,IMA
+1,Rock/Rubble,2793478,IMA
+1,Exposed/Barren Land,6553347,IMA
+1,Shrubs,589258,IMA
+1,Wetland,290,IMA
+1,Wetland-Treed,109,IMA
+1,Herbs,102906,IMA
+1,Coniferous,249424,IMA
+1,Broadleaf,11618,IMA
+1,Mixed Wood,915,IMA
+1,Water,605560,MH
+1,Snow/Ice,1364788,MH
+1,Rock/Rubble,1161900,MH
+1,Exposed/Barren Land,8011127,MH
+1,Bryoids,71,MH
+1,Shrubs,5637063,MH
+1,Wetland,76936,MH
+1,Wetland-Treed,22466,MH
+1,Herbs,1998178,MH
+1,Coniferous,24075203,MH
+1,Broadleaf,2194398,MH
+1,Mixed Wood,267976,MH
+1,Water,203445,MS
+1,Snow/Ice,4976,MS
+1,Rock/Rubble,11673,MS
+1,Exposed/Barren Land,1039705,MS
+1,Shrubs,4522589,MS
+1,Wetland,499452,MS
+1,Wetland-Treed,127548,MS
+1,Herbs,963437,MS
+1,Coniferous,23743124,MS
+1,Broadleaf,319670,MS
+1,Mixed Wood,122918,MS
+1,Water,343899,PP
+1,Snow/Ice,11,PP
+1,Rock/Rubble,2084,PP
+1,Exposed/Barren Land,1040853,PP
+1,Shrubs,300969,PP
+1,Wetland,3545,PP
+1,Wetland-Treed,713,PP
+1,Herbs,969417,PP
+1,Coniferous,600297,PP
+1,Broadleaf,14354,PP
+1,Mixed Wood,674,PP
+1,Water,593075,SBPS
+1,Snow/Ice,643,SBPS
+1,Rock/Rubble,564,SBPS
+1,Exposed/Barren Land,581784,SBPS
+1,Shrubs,3652213,SBPS
+1,Wetland,1617631,SBPS
+1,Wetland-Treed,140878,SBPS
+1,Herbs,2020970,SBPS
+1,Coniferous,16489530,SBPS
+1,Broadleaf,67717,SBPS
+1,Mixed Wood,5721,SBPS
+1,Water,7519931,SBS
+1,Snow/Ice,580,SBS
+1,Rock/Rubble,30907,SBS
+1,Exposed/Barren Land,4233658,SBS
+1,Bryoids,2,SBS
+1,Shrubs,7617675,SBS
+1,Wetland,3621976,SBS
+1,Wetland-Treed,282509,SBS
+1,Herbs,7089731,SBS
+1,Coniferous,74377342,SBS
+1,Broadleaf,9820688,SBS
+1,Mixed Wood,287541,SBS
+1,Water,842131,SWB
+1,Snow/Ice,1147435,SWB
+1,Rock/Rubble,838096,SWB
+1,Exposed/Barren Land,8446594,SWB
+1,Bryoids,41231,SWB
+1,Shrubs,22605471,SWB
+1,Wetland,1791987,SWB
+1,Wetland-Treed,135753,SWB
+1,Herbs,2810170,SWB
+1,Coniferous,55418794,SWB
+1,Broadleaf,1866534,SWB
+1,Mixed Wood,220938,SWB

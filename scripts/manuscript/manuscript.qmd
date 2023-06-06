@@ -56,7 +56,7 @@ author:
           address: 525 Superior Street
           city: Victoria, BC, Canada
           postal-code: V8V 1T7
-abstract: Under a changing climate and in light of the biodiversity crises, monitoring change in biodiversity at broad scales has become ever more imperative. Key to regular biodiversity monitoring over time and space is the definition and selection of variables capable of accurately monitoring biodiversity trends. One framework is the Essential Biodiversity Variables (EBV), which are designed to be analogous to the Essential Climate variables, and capable of monitoring biodiversity globally while also being complementary to one another, within EBV classes. Five of six EBV classes have been shown to be well suited to be monitored using satellite remote sensing, with particular focus warranted on the ecosystem structure and function classes. In this paper, we seek to address the complementarity of variables describing forest structure, as imputed across the entirety of British Columbia, Canada, with variables representing ecosystem functioning, namely the Dynamic Habitat Indices, a yearly summary of productivity indices. Both sets of variables have previously been linked with biodiversity metrics across a range of scales. Using redundancy analysis, we find that forest structural attributes and the DHIs are essentially decoupled from each other, with the forest structure variables explaining 14% of the variation in the DHIs. Further, we explore how the proportion of variance explained in the DHIs varies with either primary structure variables, such as canopy height and cover, vs more complex modelled forest structural attributes, such as aboveground biomass and volume. Results suggest there is large overlap between the two types of forest structure variables suggesting little added benefit of derived attributes beyond height and cover, in this context. Overall, we find that forest structure as an ecosystem structure EBV and the DHIs as an ecosystem function EBV represent markedly different processes as observed by remote sensing and they are highly complementary across large environmental gradients, suggesting that in an earth-observation based monitoring program both are needed.
+abstract: Under a changing climate and in light of the biodiversity crises, monitoring change in biodiversity at broad scales has become ever more imperative. Key to regular biodiversity monitoring over time and space is the definition and selection of variables capable of accurately monitoring biodiversity trends. One framework is the Essential Biodiversity Variables (EBV), which are designed to be analogous to the Essential Climate variables and capable of monitoring biodiversity globally while also being complementary to one another within EBV classes. Five of six EBV classes are well suited to being monitored using satellite remote sensing, with particular focus warranted on the ecosystem structure and function classes. In this paper, we seek to address the complementarity of variables describing forest structure, as imputed across the entirety of British Columbia, Canada, with variables representing ecosystem functioning, namely the Dynamic Habitat Indices, a yearly summary of productivity indices. Both sets of variables have previously been linked with biodiversity metrics across a range of scales. Using redundancy analysis, we find that forest structural attributes and the DHIs are essentially decoupled from each other, with the forest structure variables explaining 14% of the variation in the DHIs. Further, we explore how the proportion of variance explained in the DHIs varies with either primary structure variables, such as canopy height and cover, vs more complex modelled forest structural attributes, such as aboveground biomass and volume. Results suggest there is large overlap between the two types of forest structure variables suggesting little added benefit of derived attributes beyond height and cover, in this context. Overall, we find that forest structure as an ecosystem structure EBV and the DHIs as an ecosystem function EBV represent markedly different processes as observed by remote sensing and they are highly complementary across large environmental gradients, suggesting that in an earth-observation based monitoring program both are needed.
 keywords: 
   - remote sensing
   - landsat
@@ -122,40 +122,41 @@ bec_tab <- read_csv(here::here("data", "climate.csv")) %>%
 
 # Introduction
 
-With biodiversity being in decline, and facing extinction rates above
-the background extinction rate [@thomas2004; @urban2015], as well as the
-homogenization of communities at various scales [@mcgill2015] it is
+With biodiversity in decline, and facing extinction rates above the
+background extinction rate [@thomas2004; @urban2015], as well as the
+homogenization of communities at various scales [@mcgill2015], it is
 integral to be able to monitor how biodiversity is changing across the
 globe. In response, the global biodiversity community is making efforts
-to assess and halt the degradation of biodiversity. The Group for Earth
-Observation Biodiversity Observation Network has developed the Essential
-Biodiversity Variables [EBVs, @pereira2013], designed as an analog to
-the Essential Climate Variables framework [@bojinski2014]. EBVs are
-designed to be global in scope, relevant to biodiversity information,
-feasible to use, and complementary to one another [@skidmore2021]. While
-it can be difficult, time consuming, and expensive to collect data on
-biodiversity across wide swaths of land and varying ecosystems, EBVs,
-which can be correlated to sampled biodiversity information, allow for
-the monitoring and assessment of protected area effectiveness and
-ecosystem health at large spatial scales [@hansen2021]. There are six
-EBV classes, each of which correspond to a different facet of
-biodiversity, including species populations, species traits, community
-composition, ecosystem structure, ecosystem function, and genetic
-composition [@pereira2013].
+to assess and halt the degradation of biodiversity. The Group on Earth
+Observations Biodiversity Observation Network has developed the
+Essential Biodiversity Variables [EBVs, @pereira2013], designed as an
+analog to the Essential Climate Variables framework [@bojinski2014].
+EBVs are designed to be global in scope, relevant to biodiversity
+information, feasible to use, and complementary to one another
+[@skidmore2021]. While it can be difficult, time consuming, and
+expensive to collect data on biodiversity across wide swaths of land and
+varying ecosystems, EBVs, which can be correlated to sampled
+biodiversity information, allow for the monitoring and assessment of
+protected area effectiveness and ecosystem health at large spatial
+scales [@hansen2021]. There are six EBV classes, each of which
+correspond to a different facet of biodiversity: species populations,
+species traits, community composition, ecosystem structure, ecosystem
+function, and genetic composition [@pereira2013].
 
 Satellite remote sensing has proven to be capable of measuring five of
 the six EBV classes, the exception being genetic composition, which
 requires in-situ observation and sampling [@skidmore2021]. Species
-populations - and in turn community composition - can be assessed with
+populations, and in turn community composition, can be assessed with
 very-high-resolution imagery to identify tree species at the tree-crown
-scale, however it is difficult and computationally expensive to extend
-these analyses to broader extents [@fassnacht2016; @graves2016] while
-species traits such as vegetation phenology have been observed at the
-single-tree scale using, for example, PlanetScope imagery and
-drone-based measurements [@wu2021]. However, the spatially limited and
-often *ad-hoc* data collection approaches associated with monitoring
-individuals is not conducive to the global or regional scales required
-for biodiversity trend assessment [@valdez2023].
+scale [@fassnacht2016; @graves2016]. Additionally, species traits such
+as vegetation phenology have been observed at the single-tree scale
+using, for example, PlanetScope imagery and drone-based measurements
+[@wu2021]. However, the spatially limited and often *ad-hoc* data
+collection approaches associated with monitoring individuals is not
+conducive to the global or regional scales required for biodiversity
+trend assessment [@valdez2023], in addition to the difficulties
+associated with extending species-level analyses to broader extents
+[@fassnacht2016; @graves2016].
 
 The two landscape-level EBVs (ecosystem structure and function) are well
 suited to be examined at large spatial scales using coarser spatial
@@ -163,11 +164,11 @@ measurements, such as those taken from satellites by the Moderate
 Resolution Imaging Spectroradiometer [MODIS, @zhang2003], the Landsat
 imaging systems [@fisher2006], or Sentinel-2 [@helfenstein2022;
 @darvishzadeh2019] programs. These mid-resolution satellites can monitor
-processes at broader extents but the coarse spatial resolution removes
-the ability to relate these traits to individual organisms. As a result,
-satellite remote sensing data has been shown to be arguably the most
-effective at monitoring ecosystem based EBVs focused on structure and
-function. These EBVs classes can be monitored at regional to global
+processes at broader extents, but their coarse spatial resolution
+removes the ability to relate these traits to individual organisms. As a
+result, satellite remote sensing data has been shown to be arguably the
+most effective at monitoring ecosystem based EBVs focused on structure
+and function. These EBVs classes can be monitored at regional to global
 extents through the use of optical imagery [@cohen2004], as well as
 active sensors such as lidar (light detection and ranging) and radar
 [@guo2017; @lefsky2002; @lang2021; @neuenschwander2019; @coops2016].
@@ -194,7 +195,7 @@ approaches involving collected lidar data and optical/radar data.
 Increased forest structural complexity has been hypothesized to create
 additional niches, leading to increased species diversity [@bergen2009],
 which has been frequently demonstrated using avian species diversity
-metrics [@macarthur1961]. For example: @herniman2020 used spectral and
+metrics [@macarthur1961]. For example, @herniman2020 used spectral and
 lidar derived forest structure data to model avian habitat suitability;
 @clawges2008 found that lidar derived forest structural attributes are
 capable of identifying habitat types associated with avian species in
@@ -224,7 +225,7 @@ hypotheses have in turn been linked to patterns of annual surface
 reflectance in remote sensing data [@berry2007; @radeloff2019].
 
 @berry2007 first explored this idea by proposing the linkage of
-intra-annual summaries of MODIS derived GPP to dispersive bird species.
+intra-annual summaries of MODIS-derived GPP to dispersive bird species.
 This idea was further refined into the Dynamic Habitat Indices [DHIs,
 @coops2008], which have now been shown to be well suited to assess the
 three aforementioned hypotheses at global scales [@radeloff2019]. The
@@ -262,17 +263,17 @@ Linkages between forest ecosystem structure and function have been
 examined within a remote sensing context for over 20 years [@huete2002,
 @knyazikhin1998; @myneni1994]. While there is significant theoretical
 and empirical evidence for their relationship at single time points
-(within a single image) [@myneni1994], various relationship directions
-and shapes have been found between forest structure and function metrics
-[@ali2019]. Hypothesized mechanisms such as niche complementary have
-shown that aboveground biomass increases with stand structure
-[@zhang2012], while asymmetric competition for light can reduce forest
-productivity with increased structural complexity [@bourdier2016]. The
-relationship in particular between forest structural diversity metrics -
-which are now more accurately and comprehensively derived from lidar
-data - and temporal variation in functional metrics, specifically the
-metrics of ecosystem productivity via the DHI framework, have yet to be
-fully examined.
+(e.g. within a single image) [@myneni1994], various relationship
+directions and shapes have been found between forest structure and
+function metrics [@ali2019]. Hypothesized mechanisms such as niche
+complementarity have shown that aboveground biomass increases with stand
+structure [@zhang2012], while asymmetric competition for light can
+reduce forest productivity with increased structural complexity
+[@bourdier2016]. The relationship in particular between forest
+structural diversity metrics - which are now more accurately and
+comprehensively derived from lidar data - and temporal variation in
+functional metrics, specifically the metrics of ecosystem productivity
+via the DHI framework, have yet to be fully examined.
 
 The overall goal of this paper is to assess patterns of forest ecosystem
 structure and function, as observed using remote sensing technologies,
@@ -281,10 +282,10 @@ significant environmental gradients. To do so, we synthesize data from
 moderate-scale remote-sensing derived metrics of forest structure,
 represented as both simple ALS-extracted metrics of canopy height, cover
 and vertical complexity, as well as modelled forest structure attributes
-including volume, and aboveground biomass, with a well-established
-remote sensing derived index on ecosystem function. First, we examine
-how ecosystem structure and function complement one another across a
-large environmental gradient and then compare the simple and modelled
+including volume and aboveground biomass, with a well-established remote
+sensing derived index on ecosystem function. First, we examine how
+ecosystem structure and function complement one another across a large
+environmental gradient and then compare the simple and modelled
 representations of forest structure to different levels of ecosystem
 function. This question is important as it provides insights to the EBV
 community around complementarity of remote sensing metrics when
@@ -292,22 +293,22 @@ describing the structure and function of ecosystems and proposes a
 method to examine potential overlap when generating remote sensing EBVs.
 
 Our second question examines the independent and shared relationships of
-ecosystem structure height and cover, with modelled forest structure, on
-ecosystem function. This provides insight into the choice of remote
-sensing attributes to use when developing EBVs within a single EBV
-class. Remote sensing datasets can comprise relatively unprocessed
-observations, in this case ALS measures of height and cover which are
-derived from the raw 3D point cloud vs modelled attributes, such as
-biomass and volume, which involve the use the statistical relationships
-with field data to transform the observations into more refined data
-products. Assessing which of these two (or combination of the two)
-approaches has stronger or weaker relationships with estimates of
-ecosystem function provides insights into the choice of data used to
-build EBVs. Lastly, we examine how the primary and modelled structure
-variables partition the variance of the DHIs within key biomes and
-forest types across a large environmental range, examining to what
-extent ecosystem and forest types impacts these relationships and thus
-providing insight into the applicability of these results globally.
+lidar derived forest structural attributes, with modelled forest
+structure, on ecosystem function. This provides insight into the
+selection of remote sensing attributes to use when developing EBVs
+within a single EBV class. Remote sensing datasets can comprise
+relatively unprocessed observations, in this case lidar-imputed measures
+of height and cover vs modelled attributes, such as biomass and volume,
+which involve the use the statistical relationships with field data to
+transform the observations into more refined data products. Assessing
+which of these two (or combination of the two) approaches has stronger
+or weaker relationships with estimates of ecosystem function provides
+insights into the choice of data used to build EBVs. Lastly, we examine
+how the primary and modelled structure variables partition the variance
+of the DHIs within key biomes and forest types across a large
+environmental range, examining to what extent ecosystem and forest types
+impacts these relationships and thus providing insight into the
+applicability of these results globally.
 
 # Methods
 
@@ -330,10 +331,10 @@ knitr::include_graphics(here::here("outputs", "bec_map.png"))
 These zones can be further split into subzones, variants, and phases
 based on microclimate, precipitation, and topography [@pojar1987]. To
 examine trends across the large environmental gradients, we group the
-BEC zones into five broad biomes, specifically, the southern interior,
-northern interior, montane, alpine, and coastal groups similar to
-@hamann2006. We also report each BEC zone's average climate data,
-according to @wang2020 (@tbl-bec-group).
+BEC zones into five broad biomes: the southern interior, northern
+interior, montane, alpine, and coastal groups similar to @hamann2006. We
+also report each BEC zone's average climate data, according to @wang2020
+(@tbl-bec-group).
 
 ```{r}
 #| label: tbl-bec-group
@@ -391,7 +392,7 @@ energy throughout a given year [@berry2007; @radeloff2019]. The DHIs
 have previously been produced at a global extent using MODIS imagery,
 and have previously been used to assess alpha [@radeloff2019] and beta
 [@andrew2012] diversity, species abundances [@razenkova2023], and
-construct novel ecoregionalizations [@coops2009; @andrew2013] . Recent
+construct novel ecoregionalizations [@coops2009; @andrew2013]. Recent
 studies have began to examine how these indices can be constructed at a
 finer spatial resolution by using multi-annual Landsat imagery to
 generate a single synthetic year of monthly observations
