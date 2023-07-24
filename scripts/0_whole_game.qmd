@@ -30,16 +30,29 @@ source(here::here("scripts", "get_keys.R"))
 Needed rasters for 1 2 and 3
 
 ```{r loads}
-vlce <- rast("F:/mosaiced/VLCE2.0/LC_Class_HMM_2015_v20_v20.dat")
+vlce_loc <- "F:/mosaiced/VLCE2.0/LC_Class_terr_bc.dat"
+
+if (!file.exists(vlce_loc)) {
+  vlce <- rast("F:/mosaiced/VLCE2.0/LC_Class_HMM_2015_v20_v20.dat")
+  bcb <- bcmaps::bc_bound() %>%
+    vect()
+  
+  bcb_rast <- bcb %>%
+    rasterize(y = vlce) %>%
+    crop(bcb)
+  
+  vlce <- crop(vlce, bcb_rast) %>%
+    mask(bcb_rast)
+  
+  writeRaster(vlce, vlce_loc, filetype = "envi")
+}
+vlce <- rast(vlce_loc)
 bcb <- bcmaps::bc_bound() %>%
   vect()
 
 bcb_rast <- bcb %>%
   rasterize(y = vlce) %>%
   crop(bcb)
-
-vlce <- crop(vlce, bcb_rast) %>%
-  mask(bcb_rast)
 ```
 
 Run the focal cell analysis. Only runs if not done yet via if statement

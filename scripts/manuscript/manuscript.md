@@ -1,5 +1,5 @@
 ---
-title: Disentangling linkages between satellite derived forest structure and productivity essential biodiversity variables.
+title: Disentangling linkages between satellite-derived forest structure and productivity essential biodiversity variables.
 author:
   - name: Evan R. Muise
     email: evan.muise@student.ubc.ca
@@ -56,15 +56,14 @@ author:
           address: 525 Superior Street
           city: Victoria, BC, Canada
           postal-code: V8V 1T7
-abstract: Under a changing climate and in light of the biodiversity crises, monitoring change in biodiversity at broad scales has become ever more imperative. Key to regular biodiversity monitoring over time and space is the definition and selection of variables capable of accurately monitoring biodiversity trends. One framework is the Essential Biodiversity Variables (EBV), which are designed to be analogous to the Essential Climate variables and capable of monitoring biodiversity globally while also being complementary to one another within EBV classes. Five of six EBV classes are well suited to being monitored using satellite remote sensing, with particular focus warranted on the ecosystem structure and function classes. In this paper, we seek to address the complementarity of variables describing forest structure, as imputed across the entirety of British Columbia, Canada, with variables representing ecosystem functioning, namely the Dynamic Habitat Indices, a yearly summary of productivity indices. Both sets of variables have previously been linked with biodiversity metrics across a range of scales. Using redundancy analysis, we find that forest structural attributes and the DHIs are essentially decoupled from each other, with the forest structure variables explaining 14% of the variation in the DHIs. Further, we explore how the proportion of variance explained in the DHIs varies with either primary structure variables, such as canopy height and cover, vs more complex modelled forest structural attributes, such as aboveground biomass and volume. Results suggest there is large overlap between the two types of forest structure variables suggesting little added benefit of derived attributes beyond height and cover, in this context. Overall, we find that forest structure as an ecosystem structure EBV and the DHIs as an ecosystem function EBV represent markedly different processes as observed by remote sensing and they are highly complementary across large environmental gradients, suggesting that in an earth-observation based monitoring program both are needed.
 keywords: 
   - remote sensing
   - landsat
   - forest structure
   - forest productivity
-  - dynamic habitat indices
+  - dynamic habitat indices (DHIs)
   - essential biodiversity variables
-  - redundancy analysis
+  - redundancy analysis (RDA)
 date: last-modified
 bibliography: [bibliography.bib, packages.bib]
 csl: remote-sensing-of-environment.csl
@@ -73,7 +72,7 @@ format:
     keep-tex: true
     keep-md: true
     journal:
-      name: Remote Sensing of Environment
+      name: Nature Scientific Reports
       formatting: review
       model: 3p
       cite-style: authoryear
@@ -89,6 +88,7 @@ editor:
 execute: 
   echo: false
 fig-width: 300
+number-sections: true
 ---
 
 
@@ -97,596 +97,2132 @@ fig-width: 300
 :::
 
 
+
+\newpage
+
+**Abstract**
+
+Key to regular biodiversity monitoring is the definition and selection
+of variables capable of accurately monitoring biodiversity trends. One
+framework is the Essential Biodiversity Variables (EBV), which are
+standardized, comparable data that represents a minimum set of
+biological information required for monitoring biodiversity change at
+large spatial extents, with each class being complementary to one
+another -- i.e., capturing unique biological information. The
+interrelationships between forest ecosystem structure and function and
+the complementarity between these two classes of EBVs across a range of
+ecosystems encompassing significant environmental gradients are examined
+using redundancy analysis (RDA) and variation partitioning. We found
+that the primary and modelled forest structure variables are not
+strongly related to the Dynamic Habitat Indices (DHIs), with the
+structural information only explaining 16% of the variation in the DHIs,
+indicating that structure and function EBVs are suitable to be used
+together for monitoring forest ecosystems. We also found that forest
+types and ecosystems dominated by coniferous trees had less variation
+explained, potentially due to the temporal decoupling of canopy cover
+and the DHIs. We suggest that biodiversity researchers focus on using
+forest structural attributes derived directly from lidar data alongside
+the DHIs as complementary EBVs for monitoring forest ecological
+integrity.
+
+\newpage
+
 # Introduction
 
-With biodiversity in decline, and facing extinction rates above the
-background extinction rate [@thomas2004; @urban2015], as well as the
-homogenization of communities at various scales [@mcgill2015], it is
-integral to be able to monitor how biodiversity is changing across the
-globe. In response, the global biodiversity community is making efforts
-to assess and halt the degradation of biodiversity. The Group on Earth
-Observations Biodiversity Observation Network has developed the
-Essential Biodiversity Variables [EBVs, @pereira2013], designed as an
-analog to the Essential Climate Variables framework [@bojinski2014].
-EBVs are designed to be global in scope, relevant to biodiversity
-information, feasible to use, and complementary to one another
-[@skidmore2021]. While it can be difficult, time consuming, and
-expensive to collect data on biodiversity across wide swaths of land and
-varying ecosystems, EBVs, which can be correlated to sampled
-biodiversity information, allow for the monitoring and assessment of
-protected area effectiveness and ecosystem health at large spatial
-scales [@hansen2021]. There are six EBV classes, each of which
-correspond to a different facet of biodiversity: species populations,
-species traits, community composition, ecosystem structure, ecosystem
-function, and genetic composition [@pereira2013].
+Monitoring the changing state of biodiversity globally is key to
+understanding and mitigating the accelerated extinction risk for many
+species [@thomas2004; @urban2015] and the homogenization of biotic
+communities at various spatial and temporal scales
+[@mcgillFifteenFormsBiodiversity2015]. The Group on Earth Observations
+Biodiversity Observation Network has developed the Essential
+Biodiversity Variables [EBVs, @pereira2013], which are standardized,
+comparable data that represents a minimum set of biological information
+required for monitoring biodiversity change at large spatial extents
+[@skidmore2021]. The EBVs are designed as an analog to the Essential
+Climate Variables framework [@bojinski2014] to be global in scope,
+relevant to biodiversity information, feasible to implement and use, and
+complementary to one another [@skidmore2021]. While it can be difficult,
+time consuming, and expensive to collect data on biodiversity across
+wide swaths of land, EBVs can be combined with sampled biodiversity
+information to allow for the spatial extrapolation of more sparsely
+collected in situ data [@cavender-bares2022]. The standardization and
+global availability of the EBVs allows for the assessment and monitoring
+of protected area effectiveness and ecosystem health at large spatial
+scales [@hansen2021], which can then be integrated into policy
+development [@geijzendorffer2016]. There are six EBV classes, each of
+which provide information on a different facet of biodiversity: species
+populations, species traits, community composition, ecosystem structure,
+ecosystem function, and genetic composition [@pereira2013]. While these
+EBV classes can be related to one another under a variety of ecological
+and evolutionary mechanisms, they provide distinct information; multiple
+in concert can provide a more complete picture on the status and trends
+of biodiversity in a region.
 
-Satellite remote sensing has proven to be capable of measuring five of
-the six EBV classes, the exception being genetic composition, which
-requires in-situ observation and sampling [@skidmore2021]. Species
-populations, and in turn community composition, can be assessed with
-very-high-resolution imagery to identify tree species at the tree-crown
-scale [@fassnacht2016; @graves2016]. Additionally, species traits such
-as vegetation phenology have been observed at the single-tree scale
-using, for example, PlanetScope imagery and drone-based measurements
-[@wu2021]. However, the spatially limited and often *ad-hoc* data
-collection approaches associated with monitoring individuals is not
-conducive to the global or regional scales required for biodiversity
-trend assessment [@valdez2023], in addition to the difficulties
-associated with extending species-level analyses to broader extents
-[@fassnacht2016; @graves2016].
+The global coverage and moderate spatial resolutions of many optical
+satellite remote sensing missions [@wulder2022], combined with open-data
+policies [@wulder2012], make these datasets exceptionally well suited
+for contributing to some EBV classes [@skidmore2021]. The six EBV
+classes can be divided into two general approaches: species-focused and
+ecosystem-focused [@fernández2020]. Genetic composition, species
+populations, and species traits are species-focused EBVs, with community
+composition being directly related to species populations. While
+species-focused and community composition EBVs can be assessed from
+measurements at the tree-crown scale using very-high spatial resolution
+imagery [@fassnacht2016; @graves2016; @wu2021], the spatially
+limited--and often *ad-hoc*--data collection associated with monitoring
+individuals is not conducive to the global or regional scales often
+required for biodiversity trend assessments [@valdez2023]. In contrast,
+two ecosystem-based EBV classes (ecosystem structure and ecosystem
+function) are well suited to be monitored across large extents using
+moderate spatial resolution optical imagery, such as the Moderate
+Resolution Imaging Spectroradiometer [MODIS, @zhang2003], Landsat
+imaging systems [@wulder2022] or Sentinel-2 [@helfenstein2022;
+@drusch2012] programs, especially in forested environments
+[@pettorelli2018; @coops2016].
 
-The two landscape-level EBVs (ecosystem structure and function) are well
-suited to be examined at large spatial scales using coarser spatial
-measurements, such as those taken from satellites by the Moderate
-Resolution Imaging Spectroradiometer [MODIS, @zhang2003], the Landsat
-imaging systems [@fisher2006], or Sentinel-2 [@helfenstein2022;
-@darvishzadeh2019] programs. These mid-resolution satellites can monitor
-processes at broader extents, but their coarse spatial resolution
-removes the ability to relate these traits to individual organisms. As a
-result, satellite remote sensing data has been shown to be arguably the
-most effective at monitoring ecosystem based EBVs focused on structure
-and function. These EBVs classes can be monitored at regional to global
-extents through the use of optical imagery [@cohen2004], as well as
-active sensors such as lidar (light detection and ranging) and radar
-[@guo2017; @lefsky2002; @lang2021; @neuenschwander2019; @coops2016].
+Ecosystem structure is the composition, abundance, and spatial
+arrangement of different ecosystem components, and is indicative of
+habitat quality and connectivity [@noss1990; @valbuena2020]. There are
+both horizontal and vertical components of ecosystem structure. In
+forest environments, forest structural diversity has been linked to
+species richness at various spatial scales, ranging from individual
+plots to landscapes [@bergen2009; @gao2014]. Structural attributes range
+in complexity from simple (e.g., canopy cover, canopy height), to more
+complex (e.g., foliage height diversity, leaf area index) to modelled
+(e.g., aboveground biomass, basal area), which can be derived using
+lidar (light detection and ranging) data [@coops2021]. A suite of these,
+and other, structural attributes has been used as indicators of
+biodiversity at local to landscape scales [@lefsky1999; @guo2017;
+@coops2016; @bergen2009]. Increased forest structural complexity has
+been hypothesized to create additional niches, leading to increased
+species diversity [@bergen2009], which has been frequently demonstrated
+using avian species diversity metrics [@macarthur1961], with lidar
+[@clawges2008], a combination of lidar and satellite imagery
+[@herniman2020], with some research indicating that canopy vertical
+distribution was the strongest predictor of species richness
+[@goetz2007]. Although lidar datasets have traditionally been local in
+extent, advances in satellite remote sensing processing have allowed the
+extension of three-dimensional forest structure attributes nationally in
+a wall-to-wall fashion. The wall-to-wall data often uses data fusion
+approaches involving lidar data and medium spatial resolution optical
+imagery [@matasci2018; @matasci2018b; @coops2021].
 
-## EBV - Ecosystem Structure
-
-Forest structural diversity has been linked to biodiversity at various
-scales [@guo2017; @bergen2009; @gao2014]. Structural attributes range in
-complexity from simple (canopy cover; canopy height), to more complex
-(vertical and horizontal structural complexity) to modelled (aboveground
-biomass; basal area), all of which can be assessed using lidar data
-[@coops2021]. A suite of these lidar-derived attributes have been used
-as local indicators of biodiversity, including simple metrics such as
-canopy cover and canopy height as well as derived metrics including
-vertical profiles, aboveground biomass, or lidar derived indices
-[@lefsky1999; @guo2017; @coops2016]. Other second order derived metrics
-such as canopy texture, height class distribution, edges, and patch
-metrics have also been used to examine habitat and biodiversity at
-landscape scales [@bergen2009]. Advances in satellite remote sensing
-processing have now allowed 3D forest structure data to be imputed
-across wide spatial scales [@matasci2018; @coops2021] using data fusion
-approaches involving collected lidar data and optical/radar data.
-
-Increased forest structural complexity has been hypothesized to create
-additional niches, leading to increased species diversity [@bergen2009],
-which has been frequently demonstrated using avian species diversity
-metrics [@macarthur1961]. For example, @herniman2020 used spectral and
-lidar derived forest structure data to model avian habitat suitability;
-@clawges2008 found that lidar derived forest structural attributes are
-capable of identifying habitat types associated with avian species in
-pine/aspen forests; @goetz2007 used canopy structural diversity to
-predict bird species richness, finding that canopy vertical distribution
-was the strongest predictor of species richness. Forest structural
-metrics have also been used to study biodiversity in other clades as
-well [@davies2014; @nelson2005].
-
-## EBV - Ecosystem Function
-
-With respect to ecosystem function, energy availability in an ecosystem
+Ecosystem functions are measures of ecosystem performance that are the
+consequence of one or multiple ecosystem processes [@pettorelli2018;
+@ecosyste2005]. Within the EBV framework, vegetation phenology and
+metrics of primary productivity are commonly used as potential EBVs
+[@skidmore2021]. Energy availability is the amount of accessible and
+utilizable energy available for growth in an ecosystem, and is often
+measured as net primary productivity [@bonn2004]. Energy availability
 has shown to be a predictor of species richness and abundances at
 various scales [@chase2002; @radeloff2019; @coops2019; @razenkova2023],
-and is measurable using satellite remote sensing via the use of various
-vegetation indices [@huete2002; @radeloff2019]. Vegetation indices,
-which are indicative of photosynthetic activity, are commonly used as
-proxies of gross primary productivity [@huang2019]. These vegetation
-indices have also been used to assess patterns in biodiversity at single
-time points [@bonn2004], and more recently, through yearly summaries of
-productivity [@berry2007; @radeloff2019]. The relationship between
-energy availability and biodiversity occurs via various hypothesized
-mechanisms, such as the available energy hypothesis [@currie2004;
-@wright1983], the environmental stress hypothesis [@currie2004], and the
-environmental stability hypothesis [@williams2008]. These three
-hypotheses have in turn been linked to patterns of annual surface
-reflectance in remote sensing data [@berry2007; @radeloff2019].
+and is measurable using satellite remote sensing via various vegetation
+indices [@huete2002; @radeloff2019]. Vegetation indices are indicative
+of photosynthetic activity, and are commonly used as proxies of gross
+primary productivity [@huang2019]. These vegetation indices enable the
+assessment of biodiversity patterns at single time points [@bonn2004],
+or through time when using time series data [@berry2007; @radeloff2019].
 
-@berry2007 first explored this idea by proposing the linkage of
-intra-annual summaries of MODIS-derived GPP to dispersive bird species.
-This idea was further refined into the Dynamic Habitat Indices [DHIs,
-@coops2008], which have now been shown to be well suited to assess the
-three aforementioned hypotheses at global scales [@radeloff2019]. The
-cumulative DHI calculates the total amount of energy available in a
-given pixel over the course of a year. Cumulative DHI is strongly linked
-to the available energy hypothesis, which suggests that with greater
-available energy species richness will increase [@wright1983]. The
-minimum DHI, which calculates the lowest productivity over the course of
-a year can be matched to the environmental stress hypothesis, which
-proposes that higher levels of minimum available energy will lead to
-higher species richness [@currie2004]. Finally, the variation DHI, which
-calculates the coefficient of variance in a vegetation index through the
-course of a year, corresponds to the environmental stability hypothesis
-which states that lower energy variation throughout a year will lead to
-increased species richness [@williams2008].
+The relationship between energy availability and biodiversity can be
+explained through various hypothesized mechanisms: including available
+energy, environmental stress, and environmental stability. These three
+hypotheses have been incorporated into the Dynamic Habitat Indices
+(DHIs), which summarizes intra-annual dynamics in remotely-sensed
+productivity metrics and have been evaluated as broad-scale biodiversity
+indicators [@berry2007; @coops2008; @radeloff2019]. According to the
+available energy hypothesis [@wright1983] an increase in available
+energy results in higher species richness. In the context of the DHIs,
+the total energy available within a specific area is quantified using
+the cumulative DHI, which sums each productivity observation throughout
+the course of a year. The environmental stress hypothesis [@currie2004]
+suggests that higher levels of minimum available energy contribute to
+greater species richness. The minimum DHI, derived from the lowest
+productivity observed over the course of a year, indicates the level of
+available energy during stressful periods. The environmental stability
+hypothesis [@williams2008] proposes that lower energy variation
+throughout the year leads to increased species richness. The variation
+DHI captures the coefficient of variation in a vegetation index over the
+course of a year, reflecting the stability of energy availability. The
+DHIs have previously been produced at a global extent using MODIS
+imagery and have been used to assess alpha [@radeloff2019] and beta
+[@andrew2012] diversity, species abundances [@razenkova2023], and
+construct novel ecoregionalizations [@coops2009; @andrew2013]. Recent
+studies have increased the spatial resolution of these indices by
+calculating the DHIs from multi-annual Landsat imagery
+[@razenkovaMediumresolutionDynamicHabitatInPress].
 
-## Biodiversity Monitoring with EBVs
-
-Biodiversity monitoring programs often require a range of information in
-order to accurately assess changes in ecological integrity
-[@lindenmayer2010]. Choosing datasets that are most closely related to
-the phenomenon of interest in a given application allows for direct
-connections to monitoring results and management actions [@pressey2021].
-With the advent of large-extent monitoring methods like satellite remote
-sensing, and a proliferation of potential EBVs datasets, it becomes
-important to assess the interrelationships between these datasets, and
-assess their complementary of the information to reduce the duplication
-of efforts [@pereira2013; @skidmore2021]. When strong relationships are
-present between EBVs, it is possible to assess the ecological
-relationships between potential EBVs. On the other hand, when datasets
-do not appear related, they may be well suited to be used in monitoring
-programs together, as complementary EBVs.
+Choosing datasets that are most closely related to the phenomenon of
+interest in a given application allows for direct integration of
+monitoring results with management actions [@pressey2021]. With the
+advent of large-extent monitoring methods like satellite remote sensing
+which have led to a proliferation of potential EBV datasets, it becomes
+important to assess the interrelationships between these datasets and
+the complementary of the information they provide to reduce redundancy
+in future EBV development efforts [@pereira2013; @skidmore2021].
+Identifying and exploring strong relationships between EBVs may help
+elucidate the ecological relationships between these facets of
+biodiversity, such as ecosystem structure and function, at local to
+global scales. On the other hand, when variables are not related, they
+may be well suited to be used in monitoring programs together, as
+complementary EBVs.
 
 Linkages between forest ecosystem structure and function have been
-examined within a remote sensing context for over 20 years [@huete2002,
+examined within a remote sensing context for decades [@huete2002,
 @knyazikhin1998; @myneni1994]. While there is significant theoretical
-and empirical evidence for their relationship at single time points
-(e.g. within a single image) [@myneni1994], various relationship
-directions and shapes have been found between forest structure and
-function metrics [@ali2019]. Hypothesized mechanisms such as niche
-complementarity have shown that aboveground biomass increases with stand
-structure [@zhang2012], while asymmetric competition for light can
-reduce forest productivity with increased structural complexity
-[@bourdier2016]. The relationship in particular between forest
-structural diversity metrics - which are now more accurately and
-comprehensively derived from lidar data - and temporal variation in
-functional metrics, specifically the metrics of ecosystem productivity
-via the DHI framework, have yet to be fully examined.
+and empirical evidence for their relationship [@myneni1994], the
+direction and significance has not been consistent, with positive,
+negative, and non-significant relationships being found [@ali2019].
+Hypothesized mechanisms such as niche complementarity suggest that
+productivity increases with stand structural complexity [@zhang2012],
+while asymmetric competition for light can reduce forest productivity
+with increased structural complexity [@bourdier2016]. Some aspects of
+forest structure, such as canopy cover and leaf area index, also
+directly influence vegetation indices, which are used to estimate
+productivity, especially in very dense or very sparse forests
+[@pettorelli2005]. Further, the relationship between forest structural
+diversity metrics--which are now more accurately and comprehensively
+derived from lidar data--and the temporal variation in functional
+metrics, specifically the metrics of ecosystem productivity via the DHIs
+framework, have yet to be fully examined.
 
-The overall goal of this paper is to assess patterns of forest ecosystem
-structure and function, as observed using remote sensing technologies,
-and their complementarity across a wide range of ecosystems encompassing
-significant environmental gradients. To do so, we synthesize data from
-moderate-scale remote-sensing derived metrics of forest structure,
-represented as both simple ALS-extracted metrics of canopy height, cover
-and vertical complexity, as well as modelled forest structure attributes
-including volume and aboveground biomass, with a well-established remote
-sensing derived index on ecosystem function. First, we examine how
-ecosystem structure and function complement one another across a large
-environmental gradient and then compare the simple and modelled
-representations of forest structure to different levels of ecosystem
-function. This question is important as it provides insights to the EBV
-community around complementarity of remote sensing metrics when
-describing the structure and function of ecosystems and proposes a
-method to examine potential overlap when generating remote sensing EBVs.
+The goal of this study is to examine relationships between forest
+ecosystem structure and function, and the complementarity between these
+two classes of EBVs across significant environmental gradients. We
+synthesize data from moderate-scale remote sensing-derived metrics of
+forest structure (simple lidar-extracted metrics of canopy height,
+canopy cover, and structural complexity), as well as modelled forest
+structure attributes (gross stem volume, basal area, and aboveground
+biomass), with a well established remote sensing-derived index for
+ecosystem function (DHIs). First, we analyze remote sensing metric
+complementarity by examining the multivariate relationship between
+ecosystem structure and function and propose a method to examine
+potential overlap in remote sensing EBVs. Second, we propose a method
+for the selection of remote sensing attributes for developing and
+applying EBVs within a single EBV using the independent and shared
+relationships of lidar-derived forest structural attributes and modelled
+forest structure on ecosystem function. Third, we examine the global
+applicability of these results using the relationship between simple and
+modelled forest structural attributes with DHIs across a range of
+environment gradients and forest types.
 
-Our second question examines the independent and shared relationships of
-lidar derived forest structural attributes, with modelled forest
-structure, on ecosystem function. This provides insight into the
-selection of remote sensing attributes to use when developing EBVs
-within a single EBV class. Remote sensing datasets can comprise
-relatively unprocessed observations, in this case lidar-imputed measures
-of height and cover vs modelled attributes, such as biomass and volume,
-which involve the use the statistical relationships with field data to
-transform the observations into more refined data products. Assessing
-which of these two (or combination of the two) approaches has stronger
-or weaker relationships with estimates of ecosystem function provides
-insights into the choice of data used to build EBVs. Lastly, we examine
-how the primary and modelled structure variables partition the variance
-of the DHIs within key biomes and forest types across a large
-environmental range, examining to what extent ecosystem and forest types
-impacts these relationships and thus providing insight into the
-applicability of these results globally.
-
-# Methods
+# Methods and Materials
 
 ## Study Area {#sec-study-area}
 
-British Columbia is the westernmost province of Canada, and is home to a
-variety of terrestrial ecosystems. Approximately 64% of the province is
+British Columbia (BC) is the westernmost province of Canada, and is home
+to a variety of terrestrial ecosystems. Located between the Pacific
+Ocean and the Rocky Mountains, approximately 64% of the province is
 forested, with large environmental and topographic gradients
-[@pojar1987; @bcministryofforests2003]. The Biogeoclimatic Ecosystem
-Classification (BEC) system identifies 16 zones based on the dominant
-tree species and the ecosystems general climate (@fig-study-map).
+[@pojar1987; @bcministryofforests2003]. The majority of the forests of
+BC are coniferous forests (87.4%), with the remaining forests being
+broadleaf (8.9%), wetland-treed (2.7%) and mixed-wood (0.9%)
+[@hermosilla2022]. There is a large topographic gradient in the
+province, with elevations ranging from sea level to over 4000 m, with
+much of the province being mountainous (elevations above 1000 m)
+[@valentine1978soil]. Wildfires are a regular disturbance in the
+province, with the historical fire regime being disrupted due to
+management actions, leading to larger, higher intensity fires becoming
+more common in recent years [@brookes2021]. In addition, forestry is a
+large industry in the province, with approximately 136000 ha of the
+province harvested accounting for \~54 million cubic metres of volume of
+wood in 2021 [@canadiancouncilofforestministers2023].
+
+BC is stratified into 16 zones based on the dominant tree species and
+climate by the Biogeoclimatic Ecosystem Classification (BEC) system
+(@fig-study-map). To examine trends across the large environmental
+gradients, we group the BEC zones into five broad biomes: the Nouthern
+interior, Sorthern interior, Montane, Alpine, and Coastal groups,
+similar to @hamann2006. We also report the average climate data for BEC
+zones from 1991-2020, according to @wang2016 (Table 1).
+
 
 
 ::: {.cell}
 ::: {.cell-output-display}
-![Location of biogeoclimatic ecosystem classification (BEC) zones in British Columbia.](../../outputs/bec_map.png){#fig-study-map}
+![Location of Biogeoclimatic Ecosystem Classification (BEC) zones in British Columbia.](../../outputs/bec_map.png){#fig-study-map}
 :::
 :::
 
-
-These zones can be further split into subzones, variants, and phases
-based on microclimate, precipitation, and topography [@pojar1987]. To
-examine trends across the large environmental gradients, we group the
-BEC zones into five broad biomes: the southern interior, northern
-interior, montane, alpine, and coastal groups similar to @hamann2006. We
-also report each BEC zone's average climate data, according to @wang2020
-(@tbl-bec-group).
-
-
-::: {#tbl-bec-group .cell tbl-cap='BEC Zones, their aggregate groups, and their average climate values for precipitation, maximum temperature, and minimum temperature. Climate data from Wang et al. 2016.'}
+::: {.cell}
 ::: {.cell-output-display}
-|BEC Group |BEC Zone |Full Name                         | Precipitation (mm/yr)| Max Temperature (°C)| Min Temperature (°C)|
-|:---------|:--------|:---------------------------------|---------------------:|--------------------:|--------------------:|
-|Alpine    |BAFA     |Boreal Altai Fescue Alpine        |                1357.3|                  1.9|                 -5.6|
-|Alpine    |CMA      |Coastal Mountain-heather Alpine   |                2878.1|                  4.5|                 -2.4|
-|Alpine    |IMA      |Interior Mountain-heather Alpine  |                1621.7|                  3.1|                 -4.2|
-|Coastal   |CDF      |Coastal Douglas-fir               |                 986.1|                 12.9|                  5.9|
-|Coastal   |CWH      |Coastal Western Hemlock           |                2518.8|                 10.6|                  3.5|
-|Montane   |ESSF     |Engelmann Spruce -- Subalpine Fir |                1087.6|                  5.3|                 -3.1|
-|Montane   |MH       |Mountain Hemlock                  |                2666.2|                  7.2|                 -0.2|
-|Montane   |MS       |Montane Spruce                    |                 622.1|                  8.3|                 -2.5|
-|North     |BWBS     |Boreal White and Black Spruce     |                 516.3|                  5.9|                 -5.3|
-|North     |SBPS     |Sub-Boreal Pine -- Spruce         |                 480.1|                  9.0|                 -3.7|
-|North     |SBS      |Sub-Boreal Spruce                 |                 619.1|                  8.1|                 -2.3|
-|North     |SWB      |Spruce -- Willow -- Birch         |                 730.7|                  3.6|                 -5.7|
-|South     |BG       |Bunchgrass                        |                 320.0|                 13.1|                  1.4|
-|South     |ICH      |Interior Cedar -- Hemlock         |                 901.4|                  9.5|                 -0.3|
-|South     |IDF      |Interior Douglas-fir              |                 476.8|                 10.6|                 -0.7|
-|South     |PP       |Ponderosa Pine                    |                 352.2|                 13.6|                  2.9|
+
+```{=openxml}
+<w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+    <w:pStyle w:val="caption"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="24"/>
+    </w:rPr>
+    <w:t xml:space="preserve">Table </w:t>
+  </w:r>
+  <w:r>
+    <w:fldChar w:fldCharType="begin" w:dirty="true"/>
+  </w:r>
+  <w:r>
+    <w:instrText xml:space="preserve" w:dirty="true"> SEQ Table \* ARABIC </w:instrText>
+  </w:r>
+  <w:r>
+    <w:fldChar w:fldCharType="separate" w:dirty="true"/>
+  </w:r>
+  <w:r>
+    <w:rPr>
+      <w:noProof/>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="24"/>
+    </w:rPr>
+    <w:t xml:space="default">1</w:t>
+  </w:r>
+  <w:r>
+    <w:fldChar w:fldCharType="end" w:dirty="true"/>
+  </w:r>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="24"/>
+    </w:rPr>
+    <w:t xml:space="preserve">: </w:t>
+  </w:r>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="24"/>
+      <w:color w:val="333333"/>
+    </w:rPr>
+    <w:t xml:space="default">Biogeoclimatic Ecosystem Classification (BEC) Zones, their aggregated biomes, and their average climate values for precipitation, maximum temperature, and minimum temperature. Climate data from Wang et al. 2016 averaged for 1991-2020.</w:t>
+  </w:r>
+</w:p><w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w:tblPr><w:tblCellMar><w:top w:w="0" w:type="dxa"></w:top><w:bottom w:w="0" w:type="dxa"></w:bottom><w:start w:w="60" w:type="dxa"></w:start><w:end w:w="60" w:type="dxa"></w:end></w:tblCellMar><w:tblW w:type="pct" w:w="100%"></w:tblW><w:tblLook w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="0" w:noVBand="0"></w:tblLook><w:jc w:val="center"></w:jc></w:tblPr><w:tr><w:trPr><w:cantSplit></w:cantSplit><w:tblHeader></w:tblHeader></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">BEC Group</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">BEC Zone</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Full Name</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Precipitation (mm/yr)</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Max Temperature (°C)</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Min Temperature (°C)</w:t>
+  </w:r>
+</w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Alpine</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">BAFA</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Boreal Altai Fescue Alpine</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">1357.3</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">1.9</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-5.6</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Alpine</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">CMA</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Coastal Mountain-heather Alpine</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">2878.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">4.5</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-2.4</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Alpine</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">IMA</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Interior Mountain-heather Alpine</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">1621.7</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">3.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-4.2</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Coastal</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">CDF</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Coastal Douglas-fir</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">986.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">12.9</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">5.9</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Coastal</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">CWH</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Coastal Western Hemlock</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">2518.8</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">10.6</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">3.5</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Montane</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">ESSF</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Engelmann Spruce -- Subalpine Fir</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">1087.6</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">5.3</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-3.1</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Montane</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">MH</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Mountain Hemlock</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">2666.2</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">7.2</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-0.2</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Montane</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">MS</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Montane Spruce</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">622.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">8.3</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-2.5</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">North</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">BWBS</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Boreal White and Black Spruce</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">516.3</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">5.9</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-5.3</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">North</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">SBPS</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Sub-Boreal Pine -- Spruce</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">480.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">9.0</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-3.7</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">North</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">SBS</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Sub-Boreal Spruce</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">619.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">8.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-2.3</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">North</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">SWB</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Spruce -- Willow -- Birch</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">730.7</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">3.6</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-5.7</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">South</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">BG</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Bunchgrass</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">320.0</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">13.1</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">1.4</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">South</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">ICH</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Interior Cedar -- Hemlock</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">901.4</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">9.5</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-0.3</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">South</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">IDF</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Interior Douglas-fir</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">476.8</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">10.6</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">-0.7</w:t>
+  </w:r>
+</w:p></w:tc></w:tr>
+<w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">South</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">PP</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="start"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">Ponderosa Pine</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">352.2</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">13.6</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">2.9</w:t>
+  </w:r>
+</w:p></w:tc></w:tr></w:tbl>
+```
+
 :::
 :::
+
 
 
 ## Data
 
-### Forest Structure
+### National Terrestrial Ecosystem Monitoring System (NTEMS)
 
-We used a suite of forest structure variables (canopy height, canopy
-cover, structural complexity \[coefficient of variation of height
-returns\], basal area, aboveground biomass, and gross stem volume). This
-dataset was created for the year 2015 at a 30 m spatial resolution
-according to @matasci2018. In brief, the method used a set of lidar
-collections and field plots across Canada, and imputed the remaining
-pixels using a random forest k-Nearest Neighbour approach on
-Landsat-derived surface reflectance and auxiliary data such as
-topography. Detailed information on the creation of this dataset can be
-found in @matasci2018.
+#### Best-Available-Pixel
+
+The forest structure, forest disturbance, and land cover layers are
+based on a 30-m best-available-pixel (BAP) composite generated by
+@hermosilla2016 using the Composite2Change approach. The composites were
+developed for each year from 1984-2019 by selecting the best available
+imagery from the available growing season Landsat observations, removing
+pixels with clouds, cloud shadows, and haze. The methodology uses the
+scoring method from @white2014 to select the best pixel for a given year
+from Landsat-5 Thematic Mapper, Landsat-7 Enhanced Thematic Mapper Plus,
+and Landsat-8 Operational Land Imager imagery. To reduce noise in the
+BAP between years, a spectral trend analysis on the Normalized Burn
+Ratio was conducted on each pixel, which removes unscreened noise,
+detects changes, and temporally interpolates data gaps. This resulted in
+a gap-free surface-reflectance composite across the entirety of Canada
+[@hermosilla2015]. We utilize data from 2015 for all NTEMS data, except
+forest disturbances, where we use all available years of data in the
+terrestrial area of BC, Canada.
+
+#### Forest Disturbances
+
+We used a forest disturbance layer generated by @hermosilla2015a to
+restrict the analysis to stands older than 35 years as productivity and
+structure metrics have been shown to be strongly decoupled in early
+regenerative stands [@bolton2017], and also excluding recently
+anthropogenically disturbed stands. Changes were detected using spectral
+trend analysis and were attributed using an object-based analysis
+approach to a disturbance agent (i.e., wildfire, harvest) using a Random
+Forests classification model [@hermosilla2015a]. Changes were detected
+with an overall accuracy of 89%, attributed with an accuracy of 92%, and
+assigned to the correct year with an accuracy of 89% [@hermosilla2016].
+
+#### Land Cover {#sec-lcc}
+
+We used a land cover map generated by @hermosilla2022 to stratify our
+samples alongside the BEC zones. The 30-m spatial resolution land cover
+map for Canada's forested ecosystems was generated using the Virtual
+Land Cover Engine framework [@hermosilla2022]. This framework uses a
+Random Forests based classification approach, and integrates logical
+land cover transitions using a Hidden Markov Model to generate 12 land
+cover classes. Training samples were locally selected using an inverse
+distance weighting approach [@hermosilla2022]. The treed land cover
+classes are broadleaf, coniferous, mixed wood, and wetland-treed, which
+we use as a stratification. The land cover classification reached an
+overall accuracy of 77.9% ± 4% [@hermosilla2022].
+
+#### Forest Structure
+
+Forest structural attributes (canopy height, canopy cover, structural
+complexity \[coefficient of variation of height returns\], basal area,
+aboveground biomass, and gross stem volume) for 2015 were extracted for
+BC from the 30-m spatial resolution dataset generated by Matasci et al.
+(2018a, 2018b). In brief, the method extends structural attributes
+derived from a set of lidar acquisitions and field plots across Canada.
+These data were generated for the treed pixels of Canada using the BAP
+Landsat surface reflectance composite and auxiliary data (i.e.,
+topography, geography) using a k-Nearest Neighbour imputation
+[@matasci2018; @matasci2018b]. Accuracy metrics for imputed forest
+structural attributes range from an RMSE of 24.5% (structural
+complexity) to 82.3% (gross stem volume) and *R^2^* ranging from 0.125
+(structural complexity) to 0.712 (gross stem volume) [@matasci2018;
+@matasci2018b].
 
 ### Dynamic Habitat Indices
 
-We use an established set of indices of annual productivity shown to be
-related to global biodiversity trends: the Dynamic Habitat Indices
-[@radeloff2019]. The DHIs are a set of satellite remote sensing derived
-productivity variables that summarize the cumulative amount of available
-energy, the minimum available energy, and the variation in available
-energy throughout a given year [@berry2007; @radeloff2019]. The DHIs
-have previously been produced at a global extent using MODIS imagery,
-and have previously been used to assess alpha [@radeloff2019] and beta
-[@andrew2012] diversity, species abundances [@razenkova2023], and
-construct novel ecoregionalizations [@coops2009; @andrew2013]. Recent
-studies have began to examine how these indices can be constructed at a
-finer spatial resolution by using multi-annual Landsat imagery to
-generate a single synthetic year of monthly observations
-[@razenkova2022].
-
-The DHIs were calculated according to [@razenkova2022, Razenkova et al.,
-In Press] for all of terrestrial British Columbia. In brief, Google
-Earth Engine [@gorelick2017] was used to obtain all valid Landsat pixels
-for a given study area, filtering out pixels containing shadows, clouds,
-and cloud shadows within each image using the fmask algorithm
-[@zhu2012], then calculated the NDVI for each pixel in each image. They
-then calculated the median NDVI value for each month across a ten year
-time span (2011-2020) to generate a synthetic year of monthly data. The
-sum, minimum, and coefficient of variation across this synthetic year of
-NDVI values was then calculated. More detailed information can be found
-in Razenkova et al. (In Press).
+The DHIs were calculated following
+@razenkovaMediumresolutionDynamicHabitatInPress for the terrestrial area
+of BC. In brief, we used Google Earth Engine [@gorelick2017] to obtain
+valid Landsat pixels for the study area across a ten-year time span,
+centered on 2015 (2011-2020), filtering out pixels containing shadows,
+clouds, and cloud shadows using the QA band derived from the fmask
+algorithm [@zhu2012], and then calculated the NDVI index. These
+estimates were composited into a synthetic year of monthly data by
+calculating the monthly median NDVI value. Finally, images of the sum,
+minimum, and coefficient of variation across this synthetic year of NDVI
+values were then calculated to represent the cumulative, minimum, and
+variation DHIs, respectively. More detailed information can be found in
+@razenkovaMediumresolutionDynamicHabitatInPress.
 
 A summary of remote sensing derived datasets can be found in Table 2.
 
-# Sampling
+## Sampling
 
-We implement two sampling schemes -- one for ecosystems, and one for
-forest types -- across the terrestrial ecosystems of British Columbia
-(@fig-study-map). For both sampling schemes, each individual sample was
-taken from a forested pixel which was surrounded by the same land cover
-class. The land cover class map was generated for the year 2015
-following [@hermosilla2022] using a best-available-pixel composite, and
-an inverse-distance weighted random forest classification approach
-across Canada. Additionally, each pixel had to have a coefficient of
-variation less than 0.5 in surrounding pixels in the two simplest forest
-structure variables, canopy height and canopy cover. A minimum sampling
-distance of 1 km was implemented to reduce the effects of spatial
-autocorrelation, and samples that had been disturbed in the last 30
-years were discarded by using a disturbance mask generated for the
-forested ecosystems of Canada by @hermosilla2016.
+To obtain representative sample units of the EBV metrics across the
+study area, we implemented stratified random sampling across the union
+of BEC zones (Table 1) and forest types (i.e., coniferous, broadleaf,
+mixed wood, and wetland treed; see @sec-study-area) of BC. A maximum of
+500 sample units were selected from each stratum. Sample units were
+restricted to forested pixels that were surrounded by the same forest
+type to reduce the chance of sampling mixed pixels. To ensure that
+sample units were selected from a homogeneous area, reducing uncertainty
+associated with the input datasets [@shang2020], we required sample
+units to have a coefficient of variation for canopy cover and canopy
+height to be lower than 0.5 in a 3 x 3-pixel window. A minimum sampling
+distance of 1-km was implemented to reduce the effects of spatial
+autocorrelation, and sample units that had been disturbed in the last 30
+years were discarded by using the disturbance mask generated for the
+forested ecosystems of Canada as early regenerative forests have shown
+to have strongly decoupled productivity and canopy cover [@bolton2017].
 
-The ecosystem sampling scheme was implemented by randomly sampling
-pixels matching the above criteria within each BEC zone of British
-Columbia, up to a maximum of 3000 pixels, regardless of forest class.
-The forest type sampling scheme was similar in that each BEC zone was
-sampled, however, it implemented stratified sampling on each forest
-class, up to a maximum of 500 pixels per BEC zone and forest class.
-
-Each sampling scheme was natural-log transformed and standardized to
-Z-scores. Variables containing zeros were natural-log plus one
-transformed. Sampling was conducted in R [@R-base] version 4.2.2 using
-the **sgsR** package [@R-sgsR]. Focal analyses for the land cover
-classes and coefficient of variations of canopy height and cover were
-calculated in Python version 3.9.
+Sampling was conducted in R [@R-base] version 4.2.2 using the **sgsR**
+package [@R-sgsR]. Neighbourhood analyses for the land cover classes and
+coefficient of variations of canopy height and cover were calculated in
+Python version 3.9.
 
 ## Analysis
 
-### Redundancy Analysis and Variation Partitioning
-
 Redundancy analysis (RDA) and variation partitioning were used to relate
 the primary and modelled forest structure variables to ecosystem
-function across a broad environment range. Redundancy analysis functions
-similarly to a multiple linear regression, except it is capable of
-predicting multiple response variables. It accomplishes this by first
-running a multiple linear regression of each predictor variable on each
-response variable, then running a principle component analysis on the
-residuals from each multiple linear regression. This reduces the
-dimensionality of the output, and allows the relationship strength to be
-assessed by calculating the loadings of both predictor and response
-variables on the RDA axes. Partial redundancy analysis functions
-similarly, except also considers co-variates [@legendre2012]. Redundancy
-analysis has widely been used in community ecology where environmental
-variables of interest are compared to species composition
-[@blanchet2014; @kleyer2012] and has similarities to partial least
-squares regression -- namely, their multivariate approach, usage of
-dimensionality reduction, and linearity assumptions -- which is commonly
-used in remote sensing literature [@roelofsen2014; @burnett2021].
+function across a broad environment range. RDA has widely been used in
+community ecology where environmental variables of interest are compared
+to species composition [@blanchet2014; @kleyer2012]. RDA predicts
+multiple response variables by first running a multiple linear
+regression of the predictor variables on each response variable, and
+then a principal component analysis on the fitted values from each
+multiple linear regression. This reduces the dimensionality of the
+fitted values by transforming them into a set of independent RDA axes,
+and allows the strength of the multivariate relationship between
+predictors and responses to be assessed by calculating eigenvalues of
+the RDA. Relationships between variables are revealed by the loadings of
+both predictor and response variables on the RDA axes. RDA axes are
+labelled as RDA1, RDA2, etc. to indicate they are derived from
+redundancy analysis, rather than other ordination techniques such as
+principle component analysis or constrained correspondence analysis
+[@legendre2012]. Variation partitioning is an extension of partial RDA
+-- which allows predictor variables to be considered within pre-defined
+groups of co-variates -- that can assess the overlap between the
+explanatory power of two datasets by utilizing multiple partial RDAs and
+exchanging which datasets are considered the predictor, and which are
+considered the co-variates [@legendre2012].
 
-Following the RDA, we employ ANOVAs to determine which axes are
-significant, and calculate the proportion of variance attributable to
-each axis using the eigenvalues generated from the RDA. We calculate
-axis loadings for both forest structure and DHI variables by calculating
-the correlation between each variable and the RDA axes. Forest strcuture
-variable axis loadings represent the strength of relationship between a
-given variable and the RDA axis, while DHI loadings indicate what is
-being represented by the RDA axes. We only consider and display
-significant axes. To visualize the RDA for both predictor and response
-variables, we display the results as path diagrams, with loadings from
-each predictor to the RDA axis to the response variables. The variance
-explained by each axis is also displayed in the RDA box (@fig-rda-var).
+We performed RDAs for our full sample, pooling BEC zones and forest
+types, as well as individually by BEC zone and forest type, with results
+aggregated to BEC zone groups (see @sec-study-area). All measured values
+were natural-log transformed and standardized to Z-scores based on the
+summary statistics of the full sample prior to analyses. Forest
+structure variables were treated as predictor variables and were grouped
+based on whether they were primary estimates from the lidar data or
+modelled from lidar and ancillary information (Table 2) for variance
+partitioning. The three DHIs were used as the response variables.
+Analysis of variance tests were used to determine which RDA axes were
+significant, with p-values below 0.1 using an F-test. The proportion of
+variance attributable to each axis was calculated from the eigenvalues
+generated by the RDA, and axis loadings were calculated as the Pearson
+correlation between each forest structure or DHI variable and the RDA
+axes. Forest structure variable axis loadings represent the strength of
+relationship between a given variable and the RDA axis, while the DHIs
+loadings indicate what is being represented by the RDA axes. To
+visualize the RDA results for both predictor and response variables, we
+display the results as path diagrams, with paths annotated by the
+loadings and RDA axes annotated by the variance in the DHIs explained by
+each axis (example shown in @fig-rda-var-template). We only consider and
+display significant RDA axes.
 
-Variation partitioning is an extension of partial RDA which can assess
-the overlap between the explanatory power of two datasets by utilizing
-multiple partial RDAs and exchanging which datasets are considered the
-predictor, and which is considered the co-variate [@legendre2012].
-Variation partitioning is traditionally displayed using a Venn diagram,
-in which the percentage of variance explained by each dataset is in a
-circle, and the overlap between circles represents the overlap in
-variance explained.
+Variation partitioning is displayed using a Venn diagram in which the
+percentage of variance explained by each dataset is in a circle, and the
+overlap between circles represents the overlap in variance explained. We
+add paths to the Venn diagram to indicate how the structural attributes
+contribute to the variation in the DHIs. Because the variation
+partitioning results summarize the full multivariate solution, rather
+than individual RDA axes, we present variation partitioning results
+alongside the path diagrams illustrating the details of the RDA results
+(@fig-rda-var-template).
 
-RDA and variation partitioning analyses were conducted for all samples
-in the ecosystem sampling scheme, as well as individually across each
-ecosystem and forest type. The results were aggregated to BEC zone
-groups (see @sec-study-area). All RDA and variation partitioning
-calculations were done in R [@R-base] version 4.2.2 using the **vegan**
-package [@R-vegan].
 
-All code associated with the processing and analysis is available at
+
+::: {.cell}
+::: {.cell-output-display}
+![Template for visualization of RDA and variation partitioning results. Paths between RDA axes and predictor/response variables will be labelled with axis loadings, caluclated as the correlation between the variable and the RDA axis. If loadings are non-significant, NS will be shown on the path.](../../outputs/template.drawio.png){#fig-rda-var-template}
+:::
+:::
+
+
+
+RDA and variation partitioning calculations were done in R [@R-base]
+version 4.2.2 using the **vegan** package [@R-vegan]. The code
+associated with the processing and analysis is available at
 https://github.com/emuise/code-structProdSem.
 
 # Results
 
+Overall in BC, the intra-annual patterns of productivity as represented
+by the DHIs variables were weakly related to forest structure
+(@fig-rda-var). Less than 16% of the overall variation in the DHIs was
+explained by the forest structural attributes. Due to strong
+correlations between the axes of the DHIs, the majority of the variation
+was held within the first RDA axis, which had strong loadings for all
+DHIs, with positive loadings for the cumulative and minimum DHIs, and
+negative loadings for the variation DHI. As such, we identified the RDA1
+axis as representing overall productivity. The overall productivity axis
+had similar loadings (between 0.24-0.27) for all modelled predictors and
+canopy cover. Canopy height had a smaller loading (0.1), while
+structural complexity was negatively correlated with the overall
+productivity axis. RDA2 explained much less of the variation in the
+DHIs. RDA2 had a large positive loading on the minimum DHI (0.55), with
+negative loadings on the cumulative (-0.19) and variation (-0.39) DHIs.
+Due to the minimum and variation having the most influence on RDA2, we
+identified it as a seasonality axis. Canopy cover and structural
+complexity had the strongest (albeit negative; -0.17 and -0.08,
+respectively) loadings on the seasonality axis (@fig-rda-var A).
+Variation partitioning highlighted that the majority of the explained
+variation in the DHIs was due to the primary attributes (canopy cover,
+canopy height, and structural complexity; 9% variation explained). The
+overlap between primary and modelled attributes was 3.5%, and the
+modelled attributes explained 3.2% of the variation on their own
+(@fig-rda-var B).
 
-::: {.cell}
-::: {.cell-output-display}
-![A) Axis loadings from redundancy analysis of primary and modelled forest structure variables on the dynamic habitat indices. B) Results from variation partitioning of primary and modelled forest structure variables on the DHIs. Both visualized analyses are across all collected samples. See supplementary information for results from each BEC zone and forest type.](../../outputs/all_data_figure.drawio.png){#fig-rda-var}
-:::
-:::
-
-
-To examine the relationship between ecosystem structure and function
-across a large environmental gradient, we present the results of a
-redundancy analysis of forest structure variables on the dynamic habitat
-indices across the entire sampled dataset in @fig-rda-var A. While there
-are three RDA axes associated with the full dataset, the third axis
-explains 0.05% of the variance in the DHIs, and as a result is not
-shown. The first axis strongly represents all the DHIs (loadings \> 0.85
-for all DHIs), with the highest loadings from canopy cover, basal area,
-aboveground biomass, and gross stem volume. The other input variables
-(canopy height, structural complexity) have smaller loadings. The second
-axis primarily represents the seasonality (Minimum and Variation) of the
-DHIs, with no correlation to Cumulative DHI, and has the highest
-loadings from canopy cover and complexity, with the remainder of the
-forest structure variables having negligible influences(@fig-rda-var A).
-
-The results from the variation partitioning analysis (@fig-rda-var B)
-show that the majority of the variance explained by the input datasets
-is shared across both primary and modelled forest structure variables.
-Of the 13.4% of the variation in the DHIs being explained by the
-structural information, 9.4% is common across both sets of structure
-variables. The primary and modelled variables only explain 2.7% and 1.3%
-of the variation uniquely (@fig-rda-var B).
 
 
 ::: {.cell}
 ::: {.cell-output-display}
-![Radar plots of average loadings strength by group. A and B show input and response loadings, respectively. C) Boxplots of BEC zone, forest types, and all data loadings for predictor and response variables.](../../outputs/radar_boxplot.png){#fig-radar}
+![A) Axis loadings from redundancy analysis (RDA) of primary and modelled forest structure variables on the dynamic habitat indices (DHIs). B) Results from variation partitioning of primary and modelled forest structure variables on the DHIs. Both visualized analyses are across the entire dataset. Non-significant paths are labelled as "NS". See supplementary information for results from each BEC zone and forest type.](../../outputs/drawio/British Columbia.drawio.png){#fig-rda-var}
 :::
 :::
 
 
-Further, we wanted to examine the strength of the relationship between
-the DHIs and primary structure variables vs modelled structure variables
-across the forest types and ecosystems of the province. @fig-radar A and
-B show the axis loadings for structure variables and the DHIs,
-respectively. Across the BEC zone groups, the loadings are generally
-similar in the structure variables. Variations in the DHIs in the
-southern ecosystems, which are typically warmer and drier, have low or
-non-significant variance explained by the structure variables.
-Conversely, across the forest types (coniferous, broadleaf, mixed wood,
-and wetland-treed) structural complexity is often the highest loading.
-The loadings for the DHIs in the first axis are generally larger than
-the loadings for the structure variables, with the cumulative DHI often
-being the strongest loading overall. In alpine BEC zones, the minimum
-DHI loading is smaller than the variation and cumulative DHIs. In
-contrast to the first RDA axis, the secondary RDA axis is primarily
-driven by variation in the minimum DHI, with medium loadings in the
-variation DHI, and small loadings in the cumulative DHI (@fig-radar A &
-B). @fig-radar C shows boxplots of individual BEC zone loadings for
-structure variables and the DHIs. Across the province, canopy cover
-generally has the highest loadings, with structural complexity generally
-being the weakest.
+
+Subdividing the sample by forest type led to similar or increased
+amounts of variance explained when compared to the overall dataset
+(@fig-fracts-bar). Subdividing by BEC zones generally led to smaller
+amounts of variation explained than BC or stratifying by forest type,
+which may be due to the length of the environmental gradients included
+in the resulting subsamples (@fig-fracts-bar). The overlap between the
+primary and modelled datasets often explained the majority of the
+variation in the DHIs, except when stratifying by forest types, where
+this is only true for the coniferous subsample. The broadleaf, mixed
+wood, and wetland-treed forest types contained most of the DHIs
+explained variation in the primary structural attributes. The BEC zones
+followed a similar pattern, with most zones' DHI variation principally
+explained by the overlap, with the exception being CWH, which has no
+variation explained by the overlap between primary and modelled
+datasets. The Coastal BEC group had the lowest amount of variation
+explained, with Coastal Douglas-fir having \<1% of variation explained
+by the structural data. Overall, the DHIs are decoupled from the forest
+structural attributes, as shown by the overall variation explained being
+under 30% regardless of data stratification (@fig-fracts-bar).
+
 
 
 ::: {.cell}
 ::: {.cell-output-display}
-![Stacked bar plot proportion of DHI variation explained by extracted, modelled, and the overlap between primary and modelled structure variables.](../../outputs/fracts_bar_plot.png){#fig-fracts-bar}
+![Stacked bar plot proportion of the variation in the Dynamic Habitat Indices (DHIs) variation explained by primary, modelled, and the overlap between primary and modelled structure variables across the stratified and overall datasets.](../../outputs/fracts_bar_plot.png){#fig-fracts-bar}
 :::
 :::
 
 
-@fig-fracts-bar shows stacked bar plots of the proportion of variation
-explained in the DHIs by primary, modelled, and the overlap between
-primary and modelled variables. Forest types sampled across the
-environmental gradient generally show higher amounts of variance
-explained, which is especially prevalent in broadleaf and mixed wood
-forests. The overlap between modelled and primary structure variables is
-generally than the primary and modelled attributes individually, with
-the exception being mixed wood and broadleaf forests and colder, wetter
-forests. Higher elevation and colder forest stands have larger amounts
-of DHI variance explained by the forest structure variables than other
-environments in the province. Notably, the variation explained by the
-primary and modelled structure variables is commonly presented through a
-single RDA axis, which generally corresponds to overall productivity
-through the year (@fig-radar). Overall, the DHIs are decoupled from the
-structure variables, as shown by the overall variance explained being
-under 30%, regardless of whether the attribute is directly extracted
-from the point cloud or is a modelled variable.
+
+Stratifying the dataset by forest type and ecosystem led to varying
+loadings between the RDA axes and predictor/response variables
+(@fig-radar). The DHIs' loadings on RDA1 are large (similar to the
+overall dataset), except in colder BEC groups (Montane, North, and
+Alpine), where the minimum DHI loading half as large as the cumulative
+or variation DHI loadings. As such, we do not identify the first axis as
+being consistently associated with overall productivity. Non-coniferous
+forest types (broadleaf, mixed wood and wetland-treed) typically had
+large loadings between RDA1 and structural complexity. The mixed wood
+forest and Coastal BEC group had no significant loadings from modelled
+forest structural attributes for RDA1. Canopy cover generally had the
+highest significant predictor loading on average in RDA1. Examining the
+predictor loadings for RDA1 spatially across the province shows a
+geographic pattern in the loading strengths of primary structural
+attributes (@fig-fcc A). The interior (Northern and Southern BEC groups)
+of the province generally showed high canopy cover loadings, while the
+Boreal zones in the northwest had equal loadings in canopy cover and
+canopy height. Coastal were driven similarly by canopy height and
+structural complexity, with very low or non-significant loadings from
+canopy cover (@fig-fcc A; @fig-radar). Modelled attributes for RDA1
+generally show similar loadings across the province (@fig-fcc B).
+
 
 
 ::: {.cell}
 ::: {.cell-output-display}
-![False colour maps of axis loadings for the first RDA axis (top) and second RDA axis (bottom). All colour values are normalized to the maximum loading of each variable. A and D show axis loadings for canopy height (r), canopy cover (g) and structural complexity (b). B and E show axis loadings for basal area(r), total biomass (g) and gross stem volume (b). C and F show axis loadings for the cumulative DHI (r), variation DHI (g) and minimum DHI (b).](../../outputs/rgb_norm_edit.png){#fig-fcc}
+![Parallel coordinate plots of average absolute significant loading strength by Biogeoclimatic Ecosystem Classification (BEC) group, forest type, and British Columbia. Note the varying y axes.](../../outputs/parcoord_noflip_edit.png){#fig-radar}
 :::
 :::
 
 
-@fig-fcc shows false colour composites of the primary (A & C) and
-modelled (B & D) loadings across the ecosystems of British Columbia. In
-the first RDA axis there is spatial variation in the primary structure
-variables, with interior zones being primarily driven by canopy cover
-(green), the coastal regions having strong structural complexity and
-canopy height loadings, and the boreal in the northwest having the
-strongest loading in canopy height (@fig-fcc A). The modelled structure
-variables generally show gray-scale colour, indicating that basal area,
-total biomass, and gross stem volume explain similar variation in the
-DHIs (@fig-fcc B). All ecosystems with a secondary axis are located away
-from the Pacific coast in cooler, drier environments. Canopy cover has
-the strongest secondary axis loading in the northern boreal stands,
-while the secondary axis in the remaining four zones have the highest
-loadings in canopy height (@fig-fcc C). Again, the modeled structure
-variables are in grayscale, indicating similar loadings across the three
-modelled structure variables (@fig-fcc E).
+
+Only seven of sixteen BEC zones had a second RDA axis, with none being
+found in Coastal or Alpine BEC zones (@fig-radar; @fig-fcc) . All of the
+Montane BEC zones had a secondary axis, while some in the Northern and
+Southern interior had a secondary axis. RDA2 often showed the largest
+absolute loadings in the minimum DHI, which was frequently negative
+(@fig-radar; see supplementary material). The secondary axis had smaller
+loadings in the variation and cumulative DHIs, with only the Southern
+BEC group having a lower variation DHI loading than cumulative DHI. RDA2
+has lower predictor loadings (maximum of \~0.25) when compared to RDA1
+(maximum of \~0.5), with infrequently significant loadings for canopy
+cover and structural complexity (@fig-radar). Canopy height had much
+larger primary attribute loadings in the Southern group, while the
+Northern group had slightly larger structural complexity loadings
+(@fig-radar; @fig-fcc C) Similar to RDA1, the modelled structural
+attribute loadings were generally similar to one another, although gross
+stem volume was slightly higher in some southern BEC zones (@fig-radar;
+@fig-fcc D).
+
+
+
+::: {.cell}
+::: {.cell-output-display}
+![False colour maps by Biogeoclimatic Ecosystem Classification (BEC) zone of axis loadings for the first redundancy analysis (RDA) axis (A and B) and second RDA axis (C and D). Colour values are normalized to the maximum loading of each variable. A and C show axis loadings for canopy height (CH; red), canopy cover (CC; green) and structural complexity (SC; blue). B and D show axis loadings for basal area (BA; red), total biomass (TB; green) and gross stem volume (GSV; blue). Black indicates no significant loadings, while greyscale colours indicate similar loadings across the three variables. Annotated colour wheels for each set of variables also shown.](../../outputs/maps_colourwheel.png){#fig-fcc}
+:::
+:::
+
+
 
 # Discussion
 
-Complementarity plays a crucial role in the context of Essential
-Biodiversity Variables (EBVs) and holds significant importance for
-monitoring and understanding biodiversity [@pereira2013; @skidmore2021].
-At the ecosystem scale, the interconnectedness and interdependence of
-ecosystem structure and function is important to recognize and
-disentangle. In forested environments, forest structure and productivity
-have been shown to be linked in multiple studies spanning three decades
-[@ali2019; @myneni1994], however, a linkage between intra-annual
-production and forest structure has yet to be shown. In this study, we
-use statistical analyses commonly used in community ecology - namely
-redundancy analysis and variation partitioning - to assess the
-complementarity of forest structure and yearly productivity summaries.
-While RDA is common in the ecological literature, this analysis
-represents one of the first times this technique has been applied to
-assess the complimentary of proposed satellite-derived EBVs. We find
-that the example EBVs do not strongly overlap, with forest structure
-explaining 13.4% of the variation in the DHIs in samples taken across a
-broad environmental gradient (@fig-rda-var B). This indicates that they
-are suitable to be used in tandem with one another when used as
-ecosystem EBVs across wide environmental gradients.
+Relationships between forest ecosystem structure and function are
+increasingly being examined due to advances in data collection methods
+[@ali2019; @radeloff2019; @ali2016]. Prior studies have shown both
+theoretical [@knyazikhin1998] and empirical [@atkins2018] relationships
+between forest ecosystem structure and function. We examined these
+relationships across the province of BC, Canada, which has significant
+environmental gradients [@valentine1978soil; @pojar1987] by using
+wall-to-wall lidar-derived forest structural attributes [@matasci2018;
+@matasci2018b] and intra-annual satellite-derived summaries of
+vegetation productivity [@radeloff2019;
+@razenkovaMediumresolutionDynamicHabitatInPress]. We found a weak
+relationship between in forest ecosystem structure and function overall
+across BC (15.7% of variation explained in the DHIs by forest structural
+attributes), as well as within individual BEC zones and forest types
+found in BC (@fig-fracts-bar).
 
-Across most of British Columbia's ecosystems, we identified a single RDA
-axis associated with the DHIs, encompassing the variation in annual
-productivity (@fig-rda-var A). Within this first axis, the strongest
-loadings were canopy cover and the modelled structure variables. In
-Alpine ecosystems the relationship between the first axis and the
-Minimum DHI was lowest, likely due to the low amount of variation in the
-Minimum DHI in these ecosystems. When a second axis was significant, it
-consistently had strong loadings on the minimum and variation DHIs,
-which indicates a complex internal productivity relationship in certain
-ecosystems. This secondary axis has smaller axis loadings associated
-with the primary and modelled structure variables, with the strongest
-loadings being canopy cover and structural complexity across the entire
-dataset (@fig-rda-var A).
+Ecosystem structure and function are key EBV classes which are capable
+of being measured using satellite remote sensing at global extents and
+with large temporal depth [@pereira2013; @skidmore2021]. Both EBV
+classes have been related to biodiversity metrics [@radeloff2019;
+@bergen2009]. One of the key attributes of the EBV framework is the
+complementarity of the proposed datasets, therefore it is necessary to
+determine if potential EBVs comprise unique or duplicate information
+when compared with one another [@skidmore2021]. This can be especially
+important when both datasets being examined were primarily derived using
+data from the same series of satellites, in our case, the Landsat series
+[@matasci2018; @matasci2018b;
+@razenkovaMediumresolutionDynamicHabitatInPress]. Our findings show weak
+relationships between these two classes, indicating that these datasets
+are very suitable to be used in a fashion complementary to one another,
+especially when examining ecosystem integrity, even with the same data
+provenance [@hansen2021].
 
-Our second question sought to explore whether modelled structure
-variables (basal area, gross stem volume, aboveground biomass) add
-additional explanatory information when predicting the DHIs, as compared
-to primary forest structure variables. We generally found that canopy
-cover had the largest axis loadings in the first RDA axis (@fig-radar).
-Modelled structure variables such as basal area, aboveground biomass,
-and gross stem volume shared similar loading magnitudes across the range
-of studied ecosystems, indicating they do not add additional value when
-utilized with one another (@fig-radar C; @fig-fcc B). The loadings
-between the modelled structure variables and canopy cover are often
-similar, and as such, in this context we recommend utilizing the
-structure variables derived directly from the point cloud in the case of
-ALS data, or selecting a single modelled attribute, such as aboveground
-biomass alone [@duncanson2022].
+While we assess the complementarity of ecosystem structure and function,
+a single pair of EBVs easily measurable at similar scales, other EBV
+class combinations should also be assessed for complementarity. This is
+especially relevant in cases such as ours, where remote sensing datasets
+can proliferate to a number of EBVs in different classes
+[@skidmore2021]. Other EBVs, such as those found in the community
+composition and species population classes, will be inherently linked
+due to being based on the same data. In addition, @skidmore2021
+highlighted that many satellite-derived biodiversity products can fall
+into multiple EBV classes simultaneously -- e.g., leaf area index being
+in the ecosystem structure, ecosystem function, and species trait EBV
+classes -- depending on the spatial scale of analysis and goal of the
+monitoring system. As such, it is relevant to consider which classes
+each biodiversity product should belong to, for given extents and
+temporal depths.
 
-During the analysis we found a higher amount of total variance explained
-in deciduous forests (mixed-wood and broadleaf) when compared to the
-other two forest types and most BEC zones (@fig-fracts-bar). This could
-potentially be due to the temporal linkages between canopy cover in
-deciduous forests and productivity. In evergreen coniferous forests
-where canopy cover is present year-round, there is likely a temporal
-mismatch between forest structure variables and the DHIs. Further, the
-strongest loadings in these two forest types was vertical structural
-complexity, rather than canopy cover. This indicates that the DHIs are
-more closely related to forest structure in deciduous forests, however
-even there significant decoupling remains.
+Further, we assessed the utility of primary forest structural attributes
+when compared to modelled forest structural attributes to examine
+duplicated information within a single EBV class. We found that standard
+lidar-derived measurements, such as canopy height, canopy cover, and
+structural complexity (as proposed by Valbuena et al., 2020) comprise
+the majority of the explained variation in the DHIs, either
+independently or in their overlap with the modelled attributes
+(@fig-fracts-bar). This could be expected as modelled forest structural
+attributes are generally directly based on the primary forest structural
+attributes [@coops2021], however, the creation of modelled forest
+structural attributes involves modelling expertise and processing time
+overhead [@matasci2018; @matasci2018b; @duncanson2022]. One advantage of
+these interpreted products is potential uptake by a broader set of
+users, and their ability to be more closely linked to management actions
+and monitoring results, as is the case with forest biomass for climate
+change mitigation [@duncanson2022].
 
-Finally, we explored the amount of variation explained by primary vs
-modelled structure variables, as well as their overlap
-(@fig-fracts-bar). We generally found that the overlap between the
-primary and modelled structure variables explained most of the
-variation, with some exceptions, indicating that using either set of
-forest structure variables may be suitable when monitoring biodiversity.
-The exceptions are especially prominent in the broadleaf and mixed wood
-forest classes, as well as cool, highly productive forests where there
-is no variation explained by the overlap between the two datasets. The
-majority of the variance explained in the broadleaf and mixed wood
-forests was in the forest structure variables derived directly from the
-point cloud. This was expected, as the modelled structure variables are
-calculated based on the derived structure variables as well as site
-index and ancillary information [@coops2021].
+In the axis loadings we found a strong linkage between canopy cover,
+structural complexity, and the DHIs, which was expected as these metrics
+are more directly related to photosynthesis than canopy height
+[@myneni1994]. We also found that axis loadings for modelled forest
+structural attributes were more similar to canopy cover and structural
+complexity than canopy height (@fig-rda-var). This was unexpected as
+while the modelled forest structural attributes are generally correlated
+due to their creation methods, these modelled attributes are primarily
+generated using canopy height information [@duncanson2022], with
+relationships often based on tree allometry rather than leaf volume or
+placement [@chave2005; @lutz2018].
 
-Recent advances in creating synthetic yearly observations have allowed
-the DHIs to be generated at a finer scale (30 m; Razenkova et al., In
-Press), rather than the previously used 1 km DHIs derived from MODIS
-[@radeloff2019; @razenkova2022]. This represents a significant
-advancement when assessing the utility of EBVs, as the 30 m scale is
-well suited to examine a range of ecological applications, including
-forest structure and productivity, and more closely approximates the
-scale at which species perceive habitat [@cohen2004; @kennedy2014]. In
-addition to more closely matching the scale of ecological phenomenon,
-this allows these datasets to be matched and analyzed with other
-datasets generated from the Landsat archive.
+Forest types with deciduous trees (namely broadleaf and mixed wood) had
+large, positive structural complexity loadings when compared to the
+other forest structural attributes (@fig-radar), with mixed wood forests
+having no modelled structural attributes associated with the DHIs. This
+structural complexity-DHIs linkage may be due to understory cover
+providing additional photosynthesis in these forest types
+[@nilsson2005]. Coniferous forests DHIs, on the other hand, show a
+weaker relationship with structural complexity than all other forest
+structural attributes. Notably, the Alpine, Montane, and Northern BEC
+groups show decoupling of the three DHIs (@fig-radar), with lower
+loadings between the Minimum DHI and RDA1. This decoupling in the DHIs
+is potentially due to the the near certainty of a pixel containing snow
+cover over the course of a year leading to consistently low minimum DHI
+values across the ecosystem and thus to weaker minimum DHI loadings
+[@razenkova2020; @beck2006]. These ecosystems with DHI decoupling also
+showed relatively strong relationships to canopy cover and weak
+relationships with structural complexity, potentially due to the
+dominance of coniferous forests in these ecosystems.
 
-In conclusion, we used redundancy analysis and variation partitioning to
-assess the complementarity of two potential EBV datasets - forest
-structure and the DHIs. We also separated the forest structure datasets
-into primary and modelled structure variables in order to assess the
-need to develop more complex structure variables, or if data derived
-directly from lidar datasets was suitable. We found that the structure
-variables are not strongly related to the DHIs, indicating that they are
-suitable to be used together as ecosystem scale EBVs when monitoring
-forest environments. We also found that variation explained by the
-overlap between primary and modelled structure variables was often
-higher than the variation explained by either individually.
+BC shows varying forest structural drivers of the DHIs depending on the
+geographic location [@fig-fcc]. The interior of BC is drier and warmer,
+and also has productivity being strongly driven by canopy cover, while
+the Coastal zones are the only BEC zone with strong structural
+complexity loadings. The climate of these regions could be influencing
+the DHIs [@perez2016], leading to varying loadings strengths depending
+on the distance to the coastline. Further, the extreme environmental and
+topographic gradients within BC's ecosystems [@pojar1987;
+@valentine1978soil] may be leading to highly variable data within the
+BEC zones we used for this study, and a finer ecoregionalization may
+reveal a different relationship between ecosystem structure and
+function.
+
+Across British Columbia, the DHIs have been shown to be strongly
+correlated with one another (@fig-rda-var). While this does imply that
+utilizing a single one of the three DHI axis may be suitable within this
+geographic region, the the DHIs do provide unique information to one
+another, which can be especially relevant when stratifying the study
+area. High levels of minimum DHI, for example, may indicate winter
+forage availability, which is difficult to capture in the variation or
+cumulative DHIs [@razenkova2020]. The variation DHI has been shown to be
+strongly related to seasonality, a key predictor of avian species
+richness, especially in migratory species [@rowhani2008]. In Coastal
+ecosystems, which are characterized by mild winters and high
+precipitation, we found that forest structure and the DHIs are strongly
+decoupled, with very little variance explained in the DHIs by the forest
+structural attributes (@fig-fracts-bar). This indicates that the
+complementarity of the DHIs and forest structural attributes should
+remain, even when expanding the analysis outside of ecosystems with
+little to no snow cover. Future research should continue to examine the
+complementarity of various EBV pairs, across varying ecosystems and
+geographic locations.
+
+# Conclusion
+
+We used redundancy analysis and variation partitioning to assess the
+complementarity of two potential EBV datasets - forest structure and the
+DHIs. We also separated the forest structure datasets into primary and
+modelled structure variables in order to assess the need to develop more
+complex structure variables, or if data derived directly from lidar
+datasets are suitable. We found that the structure variables were not
+strongly related to the DHIs, indicating that they are suitable to be
+used together as complementary ecosystem-scale EBVs when monitoring
+forest environments. It was also found that variation in the DHIs
+explained by the overlap between primary and modelled structure
+variables was often higher than the variation explained by either
+individually, both in the BC-wide dataset and the stratified datasets.
+These ecosystem structure and function variables are often attainable at
+global scales using satellite remote sensing, and recent advances are
+allowing them both to be generated at medium spatial resolutions. We
+suggest that biodiversity researchers focus on using forest structural
+attributes derived directly from the lidar data, and if needed, use a
+single modelled forest structural attribute, such as total aboveground
+biomass. In addition, we highlight that the usage of intra-annual
+summarizations of productivity provide novel information for
+biodiversity monitoring when used with forest structural attributes, and
+utilizing them as complementary EBVs for a holistic monitoring system
+for forest ecological integrity.
+
+# Acknowledgements
+
+This research was funded by NSERC support of Coops (RGPIN-2018-03851).
+Remote sensing data products utilized in this research are free and open
+and available for download at <https://ca.nfis.org/maps_eng.html>. We
+thank Dr. Michael Wulder and Dr. Joanne White for development and early
+access to these National Terrestrial Ecosystem Mapping System (NTEMS)
+products. We thank Dr. Elena Razenkova for early access to the
+Landsat-derived Dynamic Habitat Indices.
 
 \newpage
 

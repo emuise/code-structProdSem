@@ -46,7 +46,7 @@ theme_set(my_theme)
 ```
 
 ```{r data-prep}
-bec_sample_loc <- here::here("data", "samples", "bec_extracted.shp")
+bec_sample_loc <- here::here("data", "samples", "vlce_extracted.shp")
 
 bec_samples_e <- vect(bec_sample_loc)
 
@@ -56,8 +56,8 @@ bec_df <- bec_samples_e %>%
   select(bec:VarDHI) %>%
   drop_na() %>%
   tibble() %>%
-  filter(elev_cv <= 1000) %>%
-  filter(elev_p95 >= 2000)
+  filter(elev_cv <= 1000) %>% #erroneous pixels
+  filter(elev_p95 >= 2000) # non-treed pixels
 
 names_manual <- c(
   "bec",
@@ -106,7 +106,7 @@ forest_types <- bec_normal %>%
 dhi_tab <- to_rda %>%
   select(ends_with("DHI"))
 
-extracted <- to_rda %>%
+primary <- to_rda %>%
   select(elev_p95,
          elev_cv,
          # elev_stddev,
@@ -120,7 +120,7 @@ modelled <- to_rda %>%
 
 
 rda_out <- 
-  rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/extracted
+  rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/primary
       basal_area + gross_stem_volume + total_biomass, # modelled
       data = to_rda)
 
@@ -181,18 +181,18 @@ for_radar_loads <- all_data_loadings %>%
   mutate(axis_loading = ifelse(sig == "NS", 0, abs(axis_loading))) %>%
   select(var, axis, axis_loading) %>%
   pivot_wider(names_from = var, values_from = axis_loading) %>%
-  mutate(cluster = paste(axis, "- All Data")) %>%
+  mutate(cluster = paste(axis, "- British Columbia")) %>%
   select(-axis) %>%
   relocate(cluster)
 
 
-var_out <- varpart(dhi_tab, extracted, modelled)
+var_out <- varpart(dhi_tab, primary, modelled)
 
 var_out %>% 
-  plot(Xnames = c("Derived", "Modelled"))
+  plot(Xnames = c("Primary", "Modelled"))
 
 path_r2 <- var_out$part$indfract %>%
-      mutate(type = c("extracted", "modelled", "overlap", "residual")) %>%
+      mutate(type = c("primary", "modelled", "overlap", "residual")) %>%
       select(type, Adj.R.squared) %>%
   tibble()
 ```
@@ -237,38 +237,45 @@ bec_nested <- to_nest %>%
   ungroup() %>%
   rename(strata = bec)
 
-
-# vlce sampling regime to get the samples up
-vlce_samples <- read_sf(here::here("data", "samples", "vlce_extracted.shp"))
-
-vlce_df <- vlce_samples %>%
-  st_drop_geometry() %>%
-  select(-category_1, -category_2) %>%
-  rename(category = strata) %>%
-  relocate(bec) %>%
-  drop_na() %>%
-  ungroup()
-
-names(vlce_df) <- names_manual
-
-vlce_normal <- vlce_df %>%
-  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
-
-to_nest <- vlce_normal %>%
-  select(-percentage_first_returns_above_mean,
-         -loreys_height,
-         -elev_stddev,
-         -elev_mean)
-
-
-
-
 class_nested <- to_nest %>%
   group_by(category) %>%
-  slice_sample(n = 3000) %>%
-  nest() %>% 
+  nest() %>%
   ungroup() %>%
   rename(strata = category)
+
+
+# # vlce sampling regime to get the samples up
+# switched away from this to a single double stratified sample
+# vlce_samples <- read_sf(here::here("data", "samples", "vlce_extracted.shp"))
+# 
+# vlce_df <- vlce_samples %>%
+#   st_drop_geometry() %>%
+#   select(-category_1, -category_2) %>%
+#   rename(category = strata) %>%
+#   relocate(bec) %>%
+#   drop_na() %>%
+#   ungroup()
+# 
+# names(vlce_df) <- names_manual
+# 
+# vlce_normal <- vlce_df %>%
+#   mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+# 
+# to_nest <- vlce_normal %>%
+#   select(-percentage_first_returns_above_mean,
+#          -loreys_height,
+#          -elev_stddev,
+#          -elev_mean)
+# 
+# 
+# 
+# 
+# class_nested <- to_nest %>%
+#   group_by(category) %>%
+#   slice_sample(n = 3000) %>%
+#   nest() %>% 
+#   ungroup() %>%
+#   rename(strata = category)
 
 strata_nested <- bind_rows(bec_nested, class_nested)
 ```
@@ -280,7 +287,7 @@ my_rda_fun <- function(tibble) {
   dhi_tab <- tibble %>%
     select(ends_with("DHI"))
   
-  rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/extracted
+  rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/primary
       basal_area + gross_stem_volume + total_biomass, # modelled, put condition here for a conditional rda
       data = tibble)
 }
@@ -289,7 +296,7 @@ my_var_fun <- function(tibble) {
   dhi_tab <- tibble %>%
     select(ends_with("DHI"))
   
-  extracted <- tibble %>%
+  primary <- tibble %>%
     select(elev_p95,
            elev_cv,
            # elev_stddev,
@@ -300,7 +307,7 @@ my_var_fun <- function(tibble) {
            total_biomass,
            gross_stem_volume)
   
-  varpart(dhi_tab, extracted, modelled)
+  varpart(dhi_tab, primary, modelled)
 }
 ```
 
@@ -315,20 +322,20 @@ outs <- strata_nested %>%
 fracts_out <- outs %>%
   mutate(indfracts = map(var, .f = function(x) {
     x$part$indfract %>%
-      mutate(type = c("extracted", "modelled", "overlap", "residual")) %>%
+      mutate(type = c("primary", "modelled", "overlap", "residual")) %>%
       select(type, Adj.R.squared) %>%
       pivot_wider(names_from = type, values_from = Adj.R.squared)
     }
     )) %>%
   unnest(indfracts) %>%
   arrange(desc(residual)) %>%
-  select(strata, extracted, modelled, overlap) %>%
-  pivot_longer(c(extracted, modelled, overlap)) %>%
+  select(strata, primary, modelled, overlap) %>%
+  pivot_longer(c(primary, modelled, overlap)) %>%
   mutate(value = ifelse(value > 0, value, 0)) %>%
   pivot_wider()
 
 fracts_out %>% 
-  mutate(total = extracted + modelled + overlap) %>%
+  mutate(total = primary + modelled + overlap) %>%
   arrange(strata %in% forest_types,
           desc(total))
 ```
@@ -337,21 +344,21 @@ fracts_out %>%
 fract_all <- path_r2 %>% 
   pivot_wider(names_from = type, values_from = Adj.R.squared) %>% 
   select(-residual) %>%
-  mutate(strata = "All Data") %>% 
+  mutate(strata = "British Columbia") %>% 
   relocate(strata)
 
 fracts_all <- bind_rows(fracts_out,
                         fract_all)
 
 fracts_tot <- fracts_all %>% 
-  mutate(total = extracted + modelled + overlap) %>%
+  mutate(total = primary + modelled + overlap) %>%
   select(strata, total)
 
 fracts_bar_tab <- fracts_all %>%
   pivot_longer(-strata) %>%
   left_join(keys$bec, by = c("strata" = "zone")) %>%
   mutate(group = ifelse(is.na(group), "Forest Types", group),
-         group = ifelse(strata == "All Data", "All", group)) %>%
+         group = ifelse(strata == "British Columbia", "BC", group)) %>%
   left_join(fracts_tot) %>%
   mutate(zone_nm = ifelse(is.na(zone_nm), strata, zone_nm))
 
@@ -359,7 +366,7 @@ fracts_bar_tab <- fracts_all %>%
 fracts_bar_tab
 
 fracts_bar_plot <- fracts_bar_tab %>%
-  ggplot(aes(x = value, y = fct_reorder(zone_nm, total), fill = fct_rev(fct_relevel(str_to_title(name), "Overlap", after = 1)))) +
+  ggplot(aes(x = value, y = fct_reorder(zone_nm, total), fill = str_to_title(name))) +
   geom_col(position = "stack") +
   facet_grid(rows = vars(fct_reorder(group, total, .desc = T)),
              scales = "free_y",
@@ -373,13 +380,14 @@ fracts_bar_plot <- fracts_bar_tab %>%
   scale_x_continuous(labels = scales::label_percent())
 
 fracts_bar_plot
-ggsave(here::here("outputs", "fracts_bar_plot.png"), plot = fracts_bar_plot)
+ggsave(here::here("outputs", "fracts_bar_plot.png"), plot = fracts_bar_plot,
+       height = 6, width = 8)
 ```
 
 ```{r raincloud-plot}
 library(ggdist)
 fracts_out %>%
-  mutate(total = extracted + modelled + overlap) %>%
+  mutate(total = primary + modelled + overlap) %>%
   #left_join(keys$bec, by = c("bec" = "zone")) %>%
   pivot_longer(-strata) %>%
   mutate(name = str_to_title(name)) %>%
@@ -455,7 +463,7 @@ path_base <- tibble(x1 = c(0,
              shape = 21,
              col = "grey") +
   # geom_text(aes(x = 0, y = -1.15), label = "Modelled\nAttributes") +
-  # geom_text(aes(x = 0, y = 1.15), label = "Extracted\nAttributes") +
+  # geom_text(aes(x = 0, y = 1.15), label = "primary\nAttributes") +
   # geom_text(aes(x = .65, y = 0), label = "Overlap") +
   # geom_text(aes(x = 2, y = 0), label = "Dynamic\nHabitat\nIndices") +
   theme_void() +
@@ -463,7 +471,7 @@ path_base <- tibble(x1 = c(0,
 
 ggsave(here::here("outputs", "path_base.png"), path_base)
 
-path_r2_plot <- tibble(type = c("extracted", "modelled", "overlap"),
+path_r2_plot <- tibble(type = c("primary", "modelled", "overlap"),
        x1 = c(0.85, 0.85, 0.85),
        y1 = c(0.75, -0.75, 0))
 ```
@@ -474,12 +482,12 @@ var_oi <- c("VarDHI", "MinDHI", "CumDHI")
 
 var_out <- varpart(dhi_tab %>%
                      select(any_of(var_oi)),
-                   extracted, modelled)
+                   primary, modelled)
 
-# plot(var_out, Xnames = c("Extracted", "Modelled"))
+# plot(var_out, Xnames = c("Primary", "Modelled"))
 
 path_r2 <- var_out$part$indfract %>%
-      mutate(type = c("extracted", "modelled", "overlap", "residual")) %>%
+      mutate(type = c("primary", "modelled", "overlap", "residual")) %>%
       select(type, Adj.R.squared) %>%
   tibble()
 
@@ -762,17 +770,20 @@ sig_loads %>%
 # percentage_first_returns_above_mean, elev_mean, elev_stddev
 out_loadings %>% count(var)
 
-clean_loads <- sig_loads %>%
+clean_loads_raw <- sig_loads %>%
   filter(anova_sig != "NS",
          loading_sig != "NS") %>%
   bind_rows(all_data_loadings %>%
-              mutate(strata = "All Data") %>%
+              mutate(strata = "British Columbia") %>%
               rename(loading_sig = sig)) %>%
-  select(strata:axis_loading) %>%
+  select(strata:axis_loading) 
+
+clean_loads_abs <- clean_loads_raw %>%
   mutate(axis_loading = abs(axis_loading))
 ```
 
 ##### run to here for analysis to be done
+
 radar chart based on groups, not hierarchical clustering
 
 ```{r radar}
@@ -792,7 +803,7 @@ radar_loads <- clean_loads %>%
               values_from = axis_loading) %>%
   left_join(keys$bec, by = c("strata" = "zone")) %>%
   mutate(group = ifelse(is.na(group), "Forest Types", group),
-         group = ifelse(strata == "All Data", "All Data", group),
+         group = ifelse(strata == "British Columbia", "British Columbia", group),
          group = ifelse(axis == "RDA2", "RDA2", group)) %>%
   group_by(group) %>%
   summarize(across(CumDHI:elev_p95, \(x) mean(x, na.rm = T))) %>%
@@ -800,7 +811,7 @@ radar_loads <- clean_loads %>%
          group = fct_relevel(group, "Forest Types", after = 1))
 
 radar_labels <- radar_loads %>%
-  select(percentage_first_returns_above_2m:elev_p95) %>%
+  select(-group, -ends_with("DHI")) %>%
   colnames() %>%
   tibble(variable = .) %>%
   left_join(keys$continuous) %>%
@@ -843,7 +854,7 @@ boxplots <- clean_loads %>%
   left_join(keys$bec, by = c("strata" = "zone")) %>%
   mutate(group = ifelse(is.na(group), "Forest Types", group),
          group = ifelse(axis == "RDA2", "RDA2", group),
-         group = ifelse(strata == "All Data", "All Data", group),
+         group = ifelse(strata == "British Columbia", "British Columbia", group),
          inout = ifelse(endsWith(var, "DHI"), "Response", "Predictor")) %>%
   mutate(group = fct_relevel(group, "RDA2", after = Inf),
          group = fct_relevel(group, "Forest Types", after = 1)) %>%
@@ -870,8 +881,12 @@ radar_boxplot <- ((in_radar / out_radar) | boxplots)  +
 
 ggsave(here::here("outputs", "radar_boxplot.png"),
        plot = radar_boxplot,
-       device = "png")
+       device = "png",
+       height = 6,
+       width = 8)
 ```
+
+# drawio
 
 ```{r drawio}
 
@@ -888,13 +903,13 @@ two_rda <-
   read_lines(here::here(drawio_dir, "_rda_path-text_replace-RDA2.drawio"))
 
 # list to iterate
-stratum <- clean_loads %>%
+stratum <- clean_loads_raw %>%
   pull(strata) %>%
   unique()
 
 
 # make sure everything gets change in rda fig
-possibles <- clean_loads %>%
+possibles <- clean_loads_raw %>%
   select(var, axis) %>%
   complete() %>%
   mutate(possible = paste(var, axis, sep = "-")) %>%
@@ -906,7 +921,7 @@ possibles <- clean_loads %>%
 fract_all <- path_r2 %>% 
   pivot_wider(names_from = type, values_from = Adj.R.squared) %>% 
   select(-residual) %>%
-  mutate(strata = "All Data") %>% 
+  mutate(strata = "British Columbia") %>% 
   relocate(strata)
 
 fracts_all <- fracts_out %>%
@@ -916,7 +931,7 @@ fracts_all <- fracts_out %>%
 
 all_varexp <- rda_eig %>%
   filter(name != "RDA3") %>%
-  mutate(strata = "All Data") %>%
+  mutate(strata = "British Columbia") %>%
   rename(axis = name) %>%
   select(-value)
 
@@ -928,7 +943,8 @@ varexp_all <- axis_varexp %>%
 
 
 for (s in stratum) {
-  strata_tp <- clean_loads %>%
+  print(s)
+  strata_tp <- clean_loads_raw %>%
     filter(strata == s) %>%
     mutate(textreplace = paste(var, axis, sep = "-"),
            axis_loading = as.character(round(axis_loading, digits = 2)))
@@ -957,13 +973,13 @@ for (s in stratum) {
   #strata_drawio <- strata_drawio[!str_detect(strata_drawio, "RDA")]
   # filter through all possibilities remaining, replace them with NS
   
-  for(p in possibles) {
+  for (p in possibles) {
     strata_drawio <- str_replace(strata_drawio, p, "NS")
   }
   
   strata_fract <- fracts_all %>%
     filter(strata == s) %>%
-    pivot_longer(extracted:overlap) %>%
+    pivot_longer(primary:overlap) %>%
     mutate(value = (value * 100) %>%
              round(1) %>%
              paste0(., "%"))
@@ -974,8 +990,9 @@ for (s in stratum) {
   fract_value <- strata_fract %>%
     pull(value)
   
-  for(i in 1:length(fract_names)) {
-    strata_drawio <- str_replace(strata_drawio, fract_names[[i]], fract_value[[i]])
+  for (i in 1:length(fract_names)) {
+    strata_drawio <-
+      str_replace(strata_drawio, fract_names[[i]], fract_value[[i]])
   }
   
   strata_varexp <- varexp_all %>%
@@ -991,14 +1008,14 @@ for (s in stratum) {
   axis_vals <- strata_varexp %>%
     pull(var_exp)
   
-  for(i in 1:length(axis_names)) {
-    strata_drawio <- str_replace(strata_drawio, axis_names[[i]], axis_vals[[i]])
+  for (i in 1:length(axis_names)) {
+    strata_drawio <-
+      str_replace(strata_drawio, axis_names[[i]], axis_vals[[i]])
   }
   
   write_lines(strata_drawio, here::here(drawio_dir, paste0(s, ".drawio")))
 }
 ```
-
 
 ```{r complexity-iqr}
 strata_nested %>% 
@@ -1007,94 +1024,6 @@ strata_nested %>%
   geom_boxplot() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-
-# rgb map
-
-```{r}
-bec_dissolve <- read_sf(here::here("data", "shapefiles", "bec_dissolve.shp")) %>%
-  janitor::clean_names() %>%
-  select(zone)
-
-
-# non normalized
-loadings_rgb <- clean_loads %>% 
-  group_by(axis) %>%
-  pivot_wider(names_from = var,
-              values_from = axis_loading) %>%
-  ungroup() %>%
-  replace(is.na(.), 0) %>%
-  mutate(across(elev_cv:elev_p95, \(x) ifelse(x > 0.5, 0.5, x))) %>%
-  mutate(dhi_rgb = rgb(CumDHI, VarDHI, MinDHI),
-         pri_rgb = rgb(elev_p95, percentage_first_returns_above_2m, elev_cv, maxColorValue = 1),
-         mod_rgb = rgb(basal_area, total_biomass, gross_stem_volume, maxColorValue = 1)) %>%
-  select(strata, axis, percentage_first_returns_above_2m, elev_p95, elev_cv, ends_with("rgb")) %>%
-  pivot_longer(ends_with("rgb"))
-
-# normalized to max
-loadings_rgb <- clean_loads %>% 
-  group_by(var) %>%
-  mutate(axis_loading = axis_loading / max(axis_loading)) %>%
-  group_by(axis) %>%
-  pivot_wider(names_from = var,
-              values_from = axis_loading) %>%
-  ungroup() %>%
-  replace(is.na(.), 0) %>%
-  #mutate(across(elev_cv:elev_p95, \(x) ifelse(x > 0.5, 0.5, x))) %>%
-  mutate(dhi_rgb = rgb(CumDHI, VarDHI, MinDHI),
-         pri_rgb = rgb(elev_p95, percentage_first_returns_above_2m, elev_cv, maxColorValue = 1),
-         mod_rgb = rgb(basal_area, total_biomass, gross_stem_volume, maxColorValue = 1)) %>%
-  #select(strata, axis, percentage_first_returns_above_2m, elev_p95, elev_cv, ends_with("rgb")) %>%
-  pivot_longer(ends_with("rgb"))
-
-becs <- bec_normal %>%
-  pull(bec) %>%
-  unique()
-
-rgb_loads_split <- loadings_rgb %>%
-  filter(strata %in% becs) %>%
-  group_by(axis, name) %>%
-  group_split()
-```
-
-```{r}
-working <- rgb_loads_split[[1]]
-
-make_rgb_map <- function(tibble) {
-
-  rgb_cols = tibble %>%
-    pull(value) %>%
-    sort()
-  
-  bec_dissolve %>%
-    left_join(tibble, by = c("zone" = "strata")) %>%
-    mutate(ifelse(is.na(value), "grey", value)) %>%
-    ggplot() +
-    geom_sf(aes(geometry = geometry, fill = value), colour = NA) +
-    scale_fill_manual(values = rgb_cols) +
-    theme_void() +
-    theme(legend.position = "none")
-}
-
-rgb_maps <- map(rgb_loads_split, make_rgb_map)
-
-patchwork_rgbplots <- (rgb_maps[[3]] + rgb_maps[[2]]) / 
-                      (rgb_maps[[6]] + rgb_maps[[5]]) &
-  plot_annotation(tag_levels = "A")
-
-ggsave(here::here("outputs", "rgbplots_norm.png"), patchwork_rgbplots,
-       height = 6,
-       width = 8)
-
-print("png saved")
-
-ggsave(here::here("outputs", "rgbplots_norm.pdf"), patchwork_rgbplots,
-       height = 6,
-       width = 8)
-
-print("pdf saved")
-```
-
-
 
 ```{r study-map}
 library(geodata)
@@ -1231,3 +1160,224 @@ bec_normal %>%
   facet_wrap( ~ name)
 ```
 
+# new radar loads
+
+```{r}
+clean_loads %>%
+  pivot_wider(names_from = var, 
+              values_from = axis_loading) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), strata, group),
+         group = ifelse(strata == "British Columbia", "British Columbia", group)) %>%
+  group_by(group, axis) %>%
+  summarize(across(CumDHI:elev_p95, \(x) mean(x, na.rm = T))) %>%
+  pivot_longer(CumDHI:elev_p95) %>%
+  mutate(value = ifelse(is.na(value), 0, value)) %>%
+  left_join(keys$continuous, by = c("name" = "variable")) %>%
+  mutate(var_long = ifelse(is.na(var_long), name, var_long),
+         order = endsWith(var_long, "DHI")) %>%
+  ggplot(aes(x = fct_reorder(var_long, value, .desc = T), y = value)) +
+  geom_col() +
+  #coord_polar() +
+  coord_flip() +
+  facet_grid(cols = vars(group), rows = vars(axis)) +
+  labs(x = "Variable",
+       y = "Axis Loading (absolute)")
+
+clean_loads %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), strata, group),
+         group = ifelse(strata == "British Columbia", "British Columbia", group)) %>%
+  ggplot(aes(x = var, y = axis_loading, col = group)) +
+  geom_line()
+```
+
+```{r}
+clean_loads %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), strata, group),
+         group = ifelse(strata == "British Columbia", "British Columbia", group)) %>%
+  pivot_wider(names_from = var, values_from = axis_loading) %>%
+  select(-zone_nm, -order) %>%
+  replace(is.na(.), 0) %>%
+  GGally::ggparcoord(columns = 4:12,
+                     groupColumn = "group",
+                     scale = "globalminmax") +
+  facet_wrap(~axis) +
+  coord_flip()
+```
+
+# parallel coordinate plots
+
+```{r}
+data <- clean_loads_abs %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  left_join(keys$continuous %>%
+              select(var = variable, var_long)) %>%
+  mutate(group = ifelse(is.na(group), strata, group),
+         var_long = ifelse(is.na(var_long), var, var_long)) %>%
+  group_by(group, var_long, axis) %>%
+  summarize(axis_loading = mean(axis_loading)) %>%
+  ungroup() %>%
+  complete(group, var_long, axis, fill = list(axis_loading = NA)) %>%
+  mutate(inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"), 
+         group = fct_relevel(group, "British Columbia", 
+                             "Broadleaf", 
+                             "Coniferous", 
+                             "Mixed Wood", 
+                             "Wetland-Treed", 
+                             after = 0),
+         var_long = fct_relevel(var_long, 
+                                c("Canopy Height", "Canopy Cover", "Structural Complexity",
+                                "Basal Area", "Aboveground Biomass", "Gross Stem Volume",
+                                "Cumulative DHI", "Variation DHI", "Minimum DHI")))
+  
+
+# nojitter/lines
+parcoord_noflip <- data %>%
+  ggplot(aes(x = var_long, y = axis_loading)) +
+  #geom_boxplot(col = "#00000025", outlier.alpha = 0) +
+  
+  geom_line(aes(col = group, group = group), lty = "dashed") +
+  geom_point(aes(col = group, group = group, shape = group, fill = group)) +
+  # geom_hline(yintercept = 0, lty = "dashed", col = "red") +
+  facet_wrap(~paste(axis, inout),
+             scale = "free") +
+  #theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading (absolute)",
+       col = NULL,
+       shape = NULL,
+       fill = NULL) +
+  # coord_flip() +
+  scale_colour_discrete_c4a_cat(palette = "bold") +
+  scale_fill_discrete_c4a_cat(palette = "bold") +
+  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25))
+
+parcoord_noflip
+
+ggsave(here::here("outputs", "parcoord_noflip.png"), plot = parcoord_noflip,
+       height = 6, width = 8)
+
+ggsave(here::here("outputs", "parcoord_noflip.svg"), plot = parcoord_noflip,
+       height = 6, width = 8)
+```
+
+# rgb map
+
+```{r}
+bec_dissolve <- read_sf(here::here("data", "shapefiles", "bec_dissolve.shp")) %>%
+  janitor::clean_names() %>%
+  select(zone)
+
+
+# non normalized
+loadings_rgb <- clean_loads %>% 
+  group_by(axis) %>%
+  pivot_wider(names_from = var,
+              values_from = axis_loading) %>%
+  ungroup() %>%
+  replace(is.na(.), 0) %>%
+  mutate(across(elev_cv:elev_p95, \(x) ifelse(x > 0.5, 0.5, x))) %>%
+  mutate(dhi_rgb = rgb(CumDHI, VarDHI, MinDHI),
+         pri_rgb = rgb(elev_p95, percentage_first_returns_above_2m, elev_cv, maxColorValue = 1),
+         mod_rgb = rgb(basal_area, total_biomass, gross_stem_volume, maxColorValue = 1)) %>%
+  select(strata, axis, percentage_first_returns_above_2m, elev_p95, elev_cv, ends_with("rgb")) %>%
+  pivot_longer(ends_with("rgb"))
+
+# normalized to max
+loadings_rgb <- clean_loads %>% 
+  group_by(var) %>%
+  mutate(axis_loading = axis_loading / max(axis_loading)) %>%
+  group_by(axis) %>%
+  pivot_wider(names_from = var,
+              values_from = axis_loading) %>%
+  ungroup() %>%
+  replace(is.na(.), 0) %>%
+  #mutate(across(elev_cv:elev_p95, \(x) ifelse(x > 0.5, 0.5, x))) %>%
+  mutate(dhi_rgb = rgb(CumDHI, VarDHI, MinDHI),
+         pri_rgb = rgb(elev_p95, percentage_first_returns_above_2m, elev_cv, maxColorValue = 1),
+         mod_rgb = rgb(basal_area, total_biomass, gross_stem_volume, maxColorValue = 1)) %>%
+  #select(strata, axis, percentage_first_returns_above_2m, elev_p95, elev_cv, ends_with("rgb")) %>%
+  pivot_longer(ends_with("rgb"))
+
+becs <- bec_normal %>%
+  pull(bec) %>%
+  unique()
+
+rgb_loads_split <- loadings_rgb %>%
+  filter(strata %in% becs) %>%
+  group_by(axis, name) %>%
+  group_split()
+```
+
+```{r}
+make_rgb_map <- function(tibble) {
+  
+  input <- bec_dissolve %>%
+    left_join(tibble, by = c("zone" = "strata")) %>%
+    mutate(value = ifelse(is.na(value), "#000000", value))
+
+  rgb_cols = input %>%
+    st_drop_geometry() %>%
+    pull(value) %>%
+    unique() %>%
+    sort()
+  
+  input %>%
+    ggplot(aes(x = zone, y = 2, fill = value)) +
+    geom_col() +
+    scale_fill_manual(values = rgb_cols)
+  
+   input %>%
+    ggplot() +
+    geom_sf(aes(geometry = geometry, fill = value, col = value), linewidth = 0.1) +
+    scale_fill_manual(values = rgb_cols) +
+    scale_color_manual(values = rgb_cols) +
+    theme_void() +
+    theme(legend.position = "none")
+}
+
+rgb_maps <- map(rgb_loads_split, make_rgb_map)
+
+labels = c("DHI", "B - Modelled RDA1", "A - Primary RDA1", "DHI", "D - Modelled RDA2", "C - Primary RDA2")
+
+# for (i in 1:length(rgb_maps)) {
+#   print(i)
+#   gg <- rgb_maps[[i]] + labs(title = labels[[i]])
+#   
+#   ggsave(here::here("outputs", "black_plots", paste(i, ".png")),
+#          plot = gg,
+#          height = 3,
+#          width = 3)
+# }
+
+ggsave(here::here("outputs", "test_black.png"), rgb_maps[[6]])
+
+patchwork_rgbplots <- (rgb_maps[[3]] + rgb_maps[[2]]) / 
+                      (rgb_maps[[6]] + rgb_maps[[5]]) &
+  plot_annotation(tag_levels = "A")
+
+cowplot_rgb <- cowplot::plot_grid(rgb_maps[[3]], rgb_maps[[2]],
+                                  rgb_maps[[6]], rgb_maps[[5]],
+                                  labels = c("A - Primary RDA1", "B - Modelled RDA1",
+                                             "C - Primary RDA2", "D - Modelled RDA2"),
+                                  vjust = 1.25)
+
+ggsave(here::here("outputs", "rgbplots_cow.png"), cowplot_rgb, height = 7, width = 8, bg = "white")
+
+
+# ggsave(here::here("outputs", "rgbplots_norm.png"), patchwork_rgbplots,
+#        height = 6,
+#        width = 8)
+# 
+# print("png saved")
+
+# ggsave(here::here("outputs", "rgbplots_norm.pdf"), patchwork_rgbplots,
+#        height = 6,
+#        width = 8)
+# 
+# print("pdf saved")
+```

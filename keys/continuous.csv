@@ -11,3 +11,6 @@ loreys_height,Lorey's Height,1000,m
 elev_mean,Mean Elevation,1000,m
 elev_stddev,Elevation Standard Deviation,1000,m
 elev_p95,Canopy Height,1000,m
+CumDHI,Cumulative DHI,,
+MinDHI,Minimum DHI,,
+VarDHI,Variation DHI,,
