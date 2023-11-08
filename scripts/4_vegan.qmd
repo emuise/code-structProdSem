@@ -11,7 +11,7 @@ library(cols4all)
 library(terra)
 library(sf)
 library(patchwork)
-library(ggradar)
+# library(ggradar)
 source(here::here("scripts", "get_keys.R"))
 ```
 
@@ -280,6 +280,59 @@ class_nested <- to_nest %>%
 strata_nested <- bind_rows(bec_nested, class_nested)
 ```
 
+```{r}
+# linear relationships * homoschedasticity check
+
+bec_normal %>%
+  pivot_longer(cols = ends_with("DHI"),
+               names_to = "dhi",
+               values_to = "dhi_val") %>%
+  pivot_longer(
+    cols = basal_area:total_biomass,
+    names_to = "struct",
+    values_to = "struct_val"
+  ) %>%
+  ggplot(aes(x = struct_val, y = dhi_val)) +
+  geom_hex() +
+  facet_grid(rows = vars(dhi),
+             cols = vars(struct),
+             scales = "free") +
+  labs(x = "Structure Value (Normalized)",
+       y = "DHI Value (Normalized)")
+
+strata_nested_long <- strata_nested %>%
+  unnest(cols = data) %>%
+  pivot_longer(cols = ends_with("DHI"),
+               names_to = "dhi",
+               values_to = "dhi_val") %>%
+  pivot_longer(
+    cols = basal_area:total_biomass,
+    names_to = "struct",
+    values_to = "struct_val"
+  ) %>%
+  group_by(strata) %>%
+  group_split()
+
+test <- function(df) {
+  strata <- df %>%
+    pull(strata) %>%
+    unique()
+  
+  plot <- df %>% ggplot(aes(x = struct_val, y = dhi_val)) +
+    geom_hex() +
+    facet_grid(rows = vars(dhi),
+               cols = vars(struct),
+               scales = "free") +
+    labs(x = "Structure Value (Normalized)",
+         y = "DHI Value (Normalized)")
+  
+  ggsave(here::here("outputs", "linear", glue::glue("{strata}.png")))
+}
+
+map(strata_nested_long, test)
+```
+
+
 ```{r rda-var-funs}
 # function to take a tibble and get a list out outputs that can then be unnested and examined as needed. function(tibble) gets rda and varpart, as plottable objects ideally. then get the var_out$part$indfract. i'll also need to look at the significance using an anova at some point
 
@@ -367,7 +420,7 @@ fracts_bar_tab
 
 fracts_bar_plot <- fracts_bar_tab %>%
   ggplot(aes(x = value, y = fct_reorder(zone_nm, total), fill = str_to_title(name))) +
-  geom_col(position = "stack") +
+  geom_col(position = "stack", col = "white") +
   facet_grid(rows = vars(fct_reorder(group, total, .desc = T)),
              scales = "free_y",
              space = "free") +
@@ -377,7 +430,8 @@ fracts_bar_plot <- fracts_bar_tab %>%
   theme(legend.position = "bottom",
         panel.spacing.y = unit(0, "lines")) +
   guides(fill = guide_legend(reverse = T)) +
-  scale_x_continuous(labels = scales::label_percent())
+  scale_x_continuous(labels = scales::label_percent()) +
+  scale_fill_manual(values = c("#6666ff", "#c22966", "#ff6666"))
 
 fracts_bar_plot
 ggsave(here::here("outputs", "fracts_bar_plot.png"), plot = fracts_bar_plot,
@@ -782,7 +836,7 @@ clean_loads_abs <- clean_loads_raw %>%
   mutate(axis_loading = abs(axis_loading))
 ```
 
-##### run to here for analysis to be done
+# run to here for analysis to be done
 
 radar chart based on groups, not hierarchical clustering
 
@@ -1381,3 +1435,502 @@ ggsave(here::here("outputs", "rgbplots_cow.png"), cowplot_rgb, height = 7, width
 # 
 # print("pdf saved")
 ```
+
+# parallel coordinate pos neg
+
+```{r}
+neg_pos <- clean_loads_raw %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  left_join(keys$continuous %>%
+              select(var = variable, var_long)) %>%
+  mutate(group = ifelse(is.na(group), strata, group),
+         var_long = ifelse(is.na(var_long), var, var_long)) %>%
+  group_by(group, var_long, axis) %>%
+  summarize(n_pos = sum(ifelse(axis_loading > 0, 1, 0)),
+            n_neg = sum(ifelse(axis_loading < 0, 1, 0)),
+            axis_loading = mean(axis_loading)
+            ) %>%
+  ungroup() %>%
+  complete(group, var_long, axis, fill = list(axis_loading = NA,
+                                              n_pos = NA,
+                                              n_neg = NA)) %>%
+  mutate(pos_neg = case_when(n_pos > 0 & n_neg > 0 ~ "Mixed",
+                             n_pos > 0 ~ "Positive",
+                             n_neg > 0 ~ "Negative")) %>%
+  select(-n_pos, -n_neg, -axis_loading)
+
+data <- clean_loads_abs %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  left_join(keys$continuous %>%
+              select(var = variable, var_long)) %>%
+  mutate(group = ifelse(is.na(group), strata, group),
+         var_long = ifelse(is.na(var_long), var, var_long)) %>%
+  group_by(group, var_long, axis) %>%
+  summarize(axis_loading = mean(axis_loading)) %>%
+  ungroup() %>%
+  complete(group, var_long, axis, fill = list(axis_loading = NA)) %>%
+  left_join(neg_pos) %>%
+  mutate(inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"), 
+         group = fct_relevel(group, "British Columbia", 
+                             "Broadleaf", 
+                             "Coniferous", 
+                             "Mixed Wood", 
+                             "Wetland-Treed", 
+                             after = 0),
+         var_long = fct_relevel(var_long, 
+                                c("Canopy Height", "Canopy Cover", "Structural Complexity",
+                                "Basal Area", "Aboveground Biomass", "Gross Stem Volume",
+                                "Cumulative DHI", "Variation DHI", "Minimum DHI")))
+  
+
+# nojitter/lines
+parcoord_noflip <- data %>%
+  ggplot(aes(x = var_long, y = axis_loading)) +
+  #geom_boxplot(col = "#00000025", outlier.alpha = 0) +
+  
+  geom_line(aes(col = group, group = group), lty = "dashed") +
+  geom_point(data = data %>% 
+               filter(pos_neg == "Mixed"), aes(group = group, shape = group), size = 2.5, col = "black", fill = "black") +
+  geom_point(data = data %>% 
+               filter(pos_neg == "Positive"), aes(group = group, shape = group), size = 2.5, col = "red", fill = "red") +
+  geom_point(data = data %>% 
+               filter(pos_neg == "Negative"), aes(group = group, shape = group), size = 2.5, col = "grey", fill = "grey") +
+  geom_point(aes(col = group, group = group, shape = group, fill = group)) +
+  # geom_hline(yintercept = 0, lty = "dashed", col = "red") +
+  facet_wrap(~paste(axis, inout),
+             scale = "free") +
+  #theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading (absolute)",
+       col = NULL,
+       shape = NULL,
+       fill = NULL) +
+  # coord_flip() +
+  scale_colour_discrete_c4a_cat(palette = "bold") +
+  scale_fill_discrete_c4a_cat(palette = "bold") +
+  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25))
+
+parcoord_noflip
+
+ggsave(here::here("outputs", "parcoord_test.png"), plot = parcoord_noflip,
+       height = 6, width = 8)
+
+ggsave(here::here("outputs", "parcoord_noflip.png"), plot = parcoord_noflip,
+       height = 6, width = 8)
+
+ggsave(here::here("outputs", "parcoord_noflip.svg"), plot = parcoord_noflip,
+       height = 6, width = 8)
+
+```
+
+```{r}
+data %>%
+  ggplot(aes(x = var_long, y = axis_loading)) +
+  geom_point(aes(shape = group, col = pos_neg, fill = group)) +
+  geom_line(aes(col = group)) +
+  facet_wrap(~paste(axis, inout), scales = "free") +
+  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25)) +
+  scale_fill_discrete_c4a_cat(palette = "bold") +
+  scale_colour_manual(values = c("black", "grey", "red"))
+
+ggsave(here::here("outputs", "parcoord_test.png"), height = 6, width = 8)
+```
+
+```{r}
+clean_loads_raw %>%
+  mutate(pos_neg = ifelse(axis_loading > 0, "Positive", "Negative")) %>%
+  count(var, axis, pos_neg) %>%
+  ggplot(aes(y = var, x = n, fill = pos_neg)) +
+  geom_col() +
+  facet_wrap( ~ axis)
+
+clean_loads_raw %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  mutate(pos_neg = ifelse(axis_loading > 0, "Positive", "Negative")) %>%
+  count(var, group, axis, pos_neg) %>%
+  mutate(n = ifelse(pos_neg == "Positive", n, -n)) %>%
+  ggplot(aes(y = var, x = n, fill = pos_neg)) +
+  geom_col() +
+  facet_grid(cols = vars(axis),
+             rows = vars(group))
+```
+
+```{r}
+groups <- keys$bec %>%
+  pull(group) %>% unique()
+
+lollipop_data <- clean_loads_raw %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  left_join(keys$continuous %>%
+              select(var = variable, var_long)) %>%
+  mutate(
+    group = ifelse(is.na(group), strata, group),
+    var_long = ifelse(is.na(var_long), var, var_long),
+    pos_neg = ifelse(axis_loading > 0, "Positive", "Negative")
+  ) %>%
+  group_by(var_long, axis, group, pos_neg) %>%
+  summarize(n = n(),
+            avg_loading = mean(axis_loading)) %>%
+  ungroup() %>%
+  mutate(
+    inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"),
+    group = fct_relevel(
+      group,
+      "British Columbia",
+      "Broadleaf",
+      "Coniferous",
+      "Mixed Wood",
+      "Wetland-Treed",
+      after = 0
+    ),
+    var_long = fct_relevel(
+      var_long,
+      c(
+        "Canopy Height",
+        "Canopy Cover",
+        "Structural Complexity",
+        "Basal Area",
+        "Aboveground Biomass",
+        "Gross Stem Volume",
+        "Cumulative DHI",
+        "Variation DHI",
+        "Minimum DHI"
+      )
+    )
+  )
+
+
+lollipops <- lollipop_data %>%
+  group_by(group %in% groups) %>%
+  group_split()
+
+left <- lollipops[[1]] %>%
+  ggplot(aes(x = avg_loading,
+             y = var_long,
+             col = pos_neg)) +
+  geom_point() +
+  geom_segment(aes(
+    x = avg_loading,
+    xend = 0,
+    y = var_long,
+    yend = var_long
+  )) +
+  geom_vline(xintercept = 0,
+             alpha = 0.5,
+             lty = "dotted") +
+  facet_grid(cols = vars(axis),
+             rows = vars(group)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Average Loading",
+       y = NULL)
+
+right = lollipops[[2]] %>%
+  ggplot(aes(x = avg_loading,
+             y = var_long,
+             col = pos_neg)) +
+  geom_point(aes(size = n)) +
+  geom_segment(aes(
+    x = avg_loading,
+    xend = 0,
+    y = var_long,
+    yend = var_long
+  )) +
+  geom_vline(xintercept = 0,
+             alpha = 0.5,
+             lty = "dotted") +
+  facet_grid(cols = vars(axis),
+             rows = vars(group)) +
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank()) +
+  labs(x = "Average Loading",
+       y = NULL)
+
+left + right
+
+ggsave(here::here("outputs", "chris.png"))
+```
+
+```{r}
+lollipop_data %>%
+  ggplot(aes(x = var_long, y = avg_loading)) +
+  #geom_boxplot(col = "#00000025", outlier.alpha = 0) +
+  geom_line(data = lollipop_data %>%
+              filter(pos_neg == "Positive"), aes(col = group, group = group), lty = "dashed") +
+  geom_line(data = lollipop_data %>%
+              filter(pos_neg == "Negative"), aes(col = group, group = group), lty = "dashed") +
+  geom_point(aes(col = group, group = group, shape = group, fill = group)) +
+  # geom_hline(yintercept = 0, lty = "dashed", col = "red") +
+  facet_wrap(~paste(axis, inout),
+             scale = "free") +
+  #theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading (absolute)",
+       col = NULL,
+       shape = NULL,
+       fill = NULL) +
+  # coord_flip() +
+  scale_colour_discrete_c4a_cat(palette = "bold") +
+  scale_fill_discrete_c4a_cat(palette = "bold") +
+  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25))
+```
+
+# flip cum to positive
+
+```{r}
+zones <- keys$bec %>% pull(zone)
+
+flip_cum <- function(data) {
+  if(data %>% filter(var == "CumDHI") %>% nrow() == 0) {
+    return(data)
+  }
+  flip <- data %>%
+    filter(var == "CumDHI") %>%
+    pull(axis_loading) %>%
+    sign()
+  
+  data %>% mutate(axis_loading = axis_loading * flip)
+}
+
+clean_loads_cum_pos <- clean_loads_raw %>%
+  group_by(strata, axis) %>%
+  group_split() %>%
+  map_dfr(., .f = flip_cum)
+
+clean_loads_cum_pos %>%
+  filter(strata %in% zones) %>%
+  count(var, axis, sign = sign(axis_loading)) %>%
+  pivot_wider(names_from = sign, values_from = n) %>%
+  arrange(axis)
+
+
+```
+
+```{r}
+groups <- keys$bec %>% pull(group) %>% unique()
+
+clean_loads_joined <- clean_loads_cum_pos %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  left_join(keys$continuous %>%
+              select(var = variable, var_long)) %>%
+  mutate(
+    group = ifelse(is.na(group), strata, group),
+    var_long = ifelse(is.na(var_long), var, var_long),
+    pos_neg = ifelse(axis_loading > 0, "Positive", "Negative")
+  )
+
+lollipop_data <- clean_loads_joined %>%
+  group_by(var_long, axis, group, pos_neg) %>%
+  summarize(n = n(),
+            avg_loading = mean(axis_loading)) %>%
+  ungroup() %>%
+  mutate(
+    inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"),
+    group = fct_relevel(
+      group,
+      "British Columbia",
+      "Broadleaf",
+      "Coniferous",
+      "Mixed Wood",
+      "Wetland-Treed",
+      after = 0
+    ),
+    var_long = fct_relevel(
+      var_long,
+      c(
+        "Canopy Height",
+        "Canopy Cover",
+        "Structural Complexity",
+        "Basal Area",
+        "Aboveground Biomass",
+        "Gross Stem Volume",
+        "Minimum DHI",
+        "Variation DHI",
+        "Cumulative DHI"
+      )
+    )
+  )
+
+
+lollipops <- lollipop_data %>%
+  group_by(group %in% groups) %>%
+  group_split()
+
+left <- lollipops[[1]] %>%
+  ggplot(aes(x = avg_loading,
+             y = var_long,
+             col = pos_neg)) +
+  geom_point() +
+  geom_segment(aes(
+    x = avg_loading,
+    xend = 0,
+    y = var_long,
+    yend = var_long
+  )) +
+  geom_vline(xintercept = 0,
+             alpha = 0.5,
+             lty = "dotted") +
+  facet_grid(cols = vars(axis),
+             rows = vars(group)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Average Loading",
+       y = NULL)
+
+right = lollipops[[2]] %>%
+  ggplot(aes(x = avg_loading,
+             y = var_long,
+             col = pos_neg)) +
+  geom_point(aes(size = n)) +
+  geom_segment(aes(
+    x = avg_loading,
+    xend = 0,
+    y = var_long,
+    yend = var_long
+  )) +
+  geom_vline(xintercept = 0,
+             alpha = 0.5,
+             lty = "dotted") +
+  facet_grid(cols = vars(axis),
+             rows = vars(group)) +
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank()) +
+  labs(x = "Average Loading",
+       y = NULL)
+
+left + right
+
+ggsave(here::here("outputs", "chris.png"))
+```
+
+```{r}
+data <- clean_loads_joined %>%
+  # mutate(axis_loading = abs(axis_loading)) %>%
+  group_by(group, var_long, axis) %>%
+  summarize(axis_loading = mean(axis_loading)) %>%
+  ungroup() %>%
+  complete(group, var_long, axis, fill = list(axis_loading = NA)) %>%
+  mutate(inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"), 
+         group = fct_relevel(group, "British Columbia", 
+                             "Broadleaf", 
+                             "Coniferous", 
+                             "Mixed Wood", 
+                             "Wetland-Treed", 
+                             after = 0),
+         var_long = ifelse(endsWith(var_long, "DHI"), var_long, str_replace_all(var_long, " ", "\n")),
+         var_long = fct_relevel(var_long, 
+                                c("Structural\nComplexity", "Canopy\nHeight", "Canopy\nCover",
+                                "Basal\nArea", "Aboveground\nBiomass", "Gross\nStem\nVolume",
+                                "Cumulative DHI", "Variation DHI", "Minimum DHI")))
+  
+
+# nojitter/lines
+parcoord_noflip <- data %>%
+  ggplot(aes(x = var_long, y = axis_loading)) +
+  #geom_boxplot(col = "#00000025", outlier.alpha = 0) +
+  
+  geom_line(aes(col = group, group = group), lty = "dashed") +
+  geom_point(aes(col = group, group = group, shape = group, fill = group)) +
+  geom_hline(yintercept = 0, lty = "dotted", col = "grey", linewidth = 0.5) +
+  facet_wrap(~paste(axis, inout),
+             scale = "free") +
+  #theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading",
+       col = NULL,
+       shape = NULL,
+       fill = NULL) +
+  # coord_flip() +
+  scale_colour_discrete_c4a_cat(palette = "bold") +
+  scale_fill_discrete_c4a_cat(palette = "bold") +
+  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25))
+
+parcoord_noflip
+
+ggsave(here::here("outputs", "parcoord_noflip.png"), plot = parcoord_noflip,
+       height = 6, width = 8)
+
+# ggsave(here::here("outputs", "parcoord_noflip.svg"), plot = parcoord_noflip,
+#        height = 6, width = 8)
+```
+
+
+# meg scatterplots
+```{r}
+scatter <- bec_normal %>%
+  mutate(label = case_when(bec %in% c("CWH", "MS") ~ bec,
+                           T ~ "Other"))
+
+ggplot(data = scatter, aes(col = label), alpha = 0.25) +
+  geom_point(aes(x = percentage_first_returns_above_2m, y = CumDHI)) +
+  geom_density(aes(x = percentage_first_returns_above_2m)) +
+  geom_density(aes(y = CumDHI)) +
+  scale_fill_manual(values = c("grey", "red", "blue")) +
+  scale_colour_manual(values = c("grey", "red", "blue"))
+
+ggplot() +
+  geom_point(data = bec_df, aes(x = percentage_first_returns_above_2m, y = CumDHI), alpha = 0.5) +
+  geom_point(data = bec_df %>%
+               filter(bec == "CWH"), aes(x = percentage_first_returns_above_2m, y = CumDHI), col = "orange") +
+  geom_point(data = bec_df %>%
+               filter(bec == "MS"), aes(x = percentage_first_returns_above_2m, y = CumDHI), col = "red") +
+  geom_histogram(data = bec_df, aes(x = percentage_first_returns_above_2m)) +
+  geom_histogram(data = bec_df, aes(y = CumDHI))
+```
+
+```{r}
+fracts_out
+
+strata_nested %>% 
+  unnest(cols = data) %>%
+  select(-bec, -category) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Type", group)) %>%
+  ggplot() +
+  geom_boxplot(aes(x = fct_reorder(.f = strata, .x = MinDHI, .fun = mean), y = MinDHI, fill = group))
+```
+
+```{r}
+strata_nested %>% 
+  unnest(cols = data) %>%
+  select(-bec, -category) %>%
+  group_by(strata) %>%
+  summarize(across(basal_area:VarDHI, .fns = sd)) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Type", group)) %>%
+  select(strata, group, basal_area:VarDHI) %>%
+  pivot_longer(-c(strata, group)) %>%
+  left_join(fracts_out) %>%
+  mutate(varexp = primary + modelled + overlap) %>%
+  ggplot(aes(x = value, y = varexp, col = group)) +
+  geom_point() +
+  facet_wrap(~name, strip.position = "bottom") +
+  labs(x = NULL,
+       y = "Variation Explained",
+       title = "x axis is sd of variable") +
+  theme(strip.placement = "outside",
+        strip.background = element_blank())
+```
+
+```{r}
+bec_df %>%
+  left_join(fracts_out %>%
+              mutate(all = (primary + modelled + overlap) * 100) %>%
+              select(strata, all), by = c("bec" = "strata")) %>%
+  mutate(facet = paste0(bec, " (", round(all, 2), "%)")) %>%
+  ggplot(aes(x = percentage_first_returns_above_2m / 100, y = CumDHI)) +
+  geom_hex(aes(fill = after_stat(log(count)))) +
+  labs(x = "Canopy Cover (%)") +
+  facet_wrap(~fct_reorder(facet, all)) +
+  theme(legend.position = "bottom")
+
+ggsave(here::here("outputs", "supplement_hex.png"),
+       height = 6, width = 8)
+```
+
