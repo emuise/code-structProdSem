@@ -1328,7 +1328,7 @@ bec_dissolve <- read_sf(here::here("data", "shapefiles", "bec_dissolve.shp")) %>
 
 
 # non normalized
-loadings_rgb <- clean_loads %>% 
+loadings_rgb <- clean_loads_abs %>% 
   group_by(axis) %>%
   pivot_wider(names_from = var,
               values_from = axis_loading) %>%
