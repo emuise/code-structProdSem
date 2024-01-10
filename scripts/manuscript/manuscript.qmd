@@ -90,7 +90,7 @@ execute:
 fig-width: 300
 number-sections: true
 nocite: |
-  @matasci2018, @matasci2018b
+  @R-ggplot2, @sf2023
 ---
 
 ```{r}
@@ -336,10 +336,10 @@ Second, we propose a method for selecting which remote sensing
 attributes to develop and apply within a single EBV class by determining
 the independent and shared contributions of lidar-derived forest
 structural attributes and modelled forest structure to explaining
-ecosystem function. Third, we examine the global applicability of these
-results by evaluating the consistency of the observed forest
-structure-function relationships across a broad range of environment
-gradients and forest types.
+ecosystem function. Third, we examine the potential geographic
+extensibility of these results by evaluating the consistency of the
+observed forest structure-function relationships across a broad range of
+environment gradients and forest types.
 
 # Methods and Materials
 
@@ -374,7 +374,7 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
 
 ```{r}
 #| label: fig-study-map
-#| fig-cap: Location of Biogeoclimatic Ecosystem Classification (BEC) zones in British Columbia.
+#| fig-cap: Location of Biogeoclimatic Ecosystem Classification (BEC) zones in British Columbia. Map was generated in R version 4.3.1 using the ggplot2 version 2.1.0 and sf version 1.0-14 packages. 
 
 knitr::include_graphics(here::here("outputs", "bec_map.png"))
 ```
@@ -392,7 +392,8 @@ bec_tab %>%
     zone_nm = "Full Name",
     ppt = "Average Monthly Precipitation (mm/yr)",
     tmax = "Average Monthly Max Temperature (°C)",
-    tmin = "Average Monthly Min Temperature (°C)"
+    tmin = "Average Monthly Min Temperature (°C)",
+    n = "n"
   ) %>%
   tab_header(title = "Biogeoclimatic Ecosystem Classification (BEC) Zones, their aggregated biomes, and their monthly average climate values for precipitation, maximum temperature, and minimum temperature. Climate data from Wang et al. 2016 averaged for 1991-2020.")
 ```
@@ -460,7 +461,7 @@ across Canada. These data were generated for the treed pixels of Canada
 using the BAP Landsat surface reflectance composite and auxiliary data
 (i.e., topography, geography) using a k-Nearest Neighbour imputation
 [@matasci2018; @matasci2018b]. Accuracy metrics for imputed forest
-structural attributes range from an RMSE of 24.5% (structural
+structural attributes range from an RMSE of 29.7% (structural
 complexity) to 82.3% (gross stem volume) and *R^2^* ranging from 0.125
 (structural complexity) to 0.712 (gross stem volume) [@matasci2018;
 @matasci2018b].
@@ -498,12 +499,12 @@ sampling distance of 1-km was implemented to reduce the effects of
 spatial autocorrelation. Sample units that had been disturbed in the
 last 35 years were discarded by using the disturbance mask generated for
 the forested ecosystems of Canada [@hermosilla2016]. A maximum of 500
-sample units were selected from each stratum; in the many strata where
-this was not achieved, all sampling units meeting the above restrictions
-were selected. Sampling was conducted in R version 4.2.2 [@R-base] using
-the **sgsR** package [@R-sgsR]. Neighbourhood analyses for the land
-cover classes and coefficient of variations of canopy height and cover
-were calculated in Python version 3.9.
+sample units were selected from each stratum; in the strata where this
+was not achieved, all sampling units meeting the above restrictions were
+selected. Sampling was conducted in R version 4.2.2 [@R-base] using the
+**sgsR** package [@R-sgsR]. Neighbourhood analyses for the land cover
+classes and coefficient of variations of canopy height and cover were
+calculated in Python version 3.9.
 
 ## Analysis
 
@@ -601,7 +602,7 @@ variation on their own (@fig-rda-var B).
 
 ```{r}
 #| label: fig-rda-var
-#| fig-cap: A) Axis loadings from redundancy analysis (RDA) of primary and modelled forest structure variables on the dynamic habitat indices (DHIs). B) Results from variation partitioning of primary and modelled forest structure variables on the DHIs. Both visualized analyses are across the entire dataset. See supplementary information for results from each Biogeoclimatic Ecosystem Classification zone and forest type.
+#| fig-cap: A) Axis loadings from redundancy analysis (RDA) of primary and modelled forest structure variables on the dynamic habitat indices (DHIs). B) Results from variation partitioning of primary and modelled forest structure variables on the DHIs. Both visualized analyses are across the entire dataset. See supplementary information for results from each Biogeoclimatic Ecosystem Classification zone and forest type. 
 
 knitr::include_graphics(here::here("outputs", "British Columbia.drawio.png"))
 ```
@@ -684,7 +685,7 @@ generally similar to one another (@fig-radar; @fig-fcc D).
 
 ```{r}
 #| label: fig-fcc
-#| fig-cap: False colour maps by Biogeoclimatic Ecosystem Classification (BEC) zone of axis loadings for the first redundancy analysis (RDA) axis (A and B) and second RDA axis (C and D). Colour values are normalized to the maximum loading of each variable. A and C show axis loadings for canopy height (CH; red), canopy cover (CC; green) and structural complexity (SC; blue). B and D show axis loadings for basal area (BA; red), total aboveground biomass (AB; green) and gross stem volume (GSV; blue). Black indicates no significant loadings, while greyscale colours indicate similar loadings across the three variables. Annotated colour wheels for each set of variables also shown.
+#| fig-cap: False colour maps by Biogeoclimatic Ecosystem Classification (BEC) zone of axis loadings for the first redundancy analysis (RDA) axis (A and B) and second RDA axis (C and D). Colour values are normalized to the maximum loading of each variable. A and C show axis loadings for canopy height (CH; red), canopy cover (CC; green) and structural complexity (SC; blue). B and D show axis loadings for basal area (BA; red), total aboveground biomass (AB; green) and gross stem volume (GSV; blue). Black indicates no significant loadings, while greyscale colours indicate similar loadings across the three variables. Annotated colour wheels for each set of variables also shown. Maps were generated in R version 4.3.1 using the ggplot2 version 2.1.0 and sf version 1.0-14 packages. 
 
 knitr::include_graphics(here::here("outputs", "maps_colourwheel.png"))
 ```
@@ -808,9 +809,9 @@ found in these zones leading to potentially saturated NDVI values
 throughout the year. These consistent forest structural metrics --- such
 as the high canopy cover values found in the Coastal BEC zones --- may
 also lead to lower amounts of variation explained by these metrics,
-leading to them being less informative in the loadings, and other
-metrics, such as structural complexity having higher amounts of variance
-explained (@fig-radar). These complex linkages between climate, forest
+leading to them having smaller loadings, and other metrics with higher
+variation in their values, such as structural complexity, having larger
+loadings (@fig-radar). These complex linkages between climate, forest
 structure, and forest productivity become further complicated by the
 extreme environmental and topographic gradients within BC's ecosystems
 [@pojar1987; @valentine1978soil], which may warrant study into the scale

@@ -1,0 +1,1048 @@
+---
+title: "vegan_analysis"
+format: html
+editor: visual
+---
+
+```{r packages}
+library(vegan)
+library(tidyverse)
+library(cols4all)
+library(terra)
+library(sf)
+library(patchwork)
+
+source(here::here("scripts", "get_keys.R"))
+```
+
+```{r normal-fun}
+mylog <- function(data) {
+  if (any(data <= 0)) {
+    return(log1p(data))
+  } else {
+    return(log(data))
+  }
+}
+
+# normalization from grace et al 2016
+# first does mylog (does natural logarithm. if 0s present, does log(one + x))
+# then scales to z scores
+# results it more normal looking data
+normal <- function(data) {
+  data %>%
+    mylog() %>%
+    scale() %>%
+    as.numeric()
+}
+
+
+```
+
+```{r theme}
+my_theme <- theme_bw() +
+  theme(panel.grid = element_blank())
+
+theme_set(my_theme)
+```
+
+```{r data-prep}
+zones <- keys$bec %>% pull(zone)
+groups <- keys$bec %>% pull(group) %>% unique()
+
+bec_sample_loc <- here::here("data", "samples", "vlce_extracted.shp")
+
+bec_samples_e <- vect(bec_sample_loc)
+
+bec_df <- bec_samples_e %>% 
+  st_as_sf() %>%
+  st_drop_geometry() %>%
+  select(bec:VarDHI) %>%
+  drop_na() %>%
+  tibble() %>%
+  filter(elev_cv <= 1000) %>% #erroneous pixels
+  filter(elev_p95 >= 2000) # non-treed pixels
+
+names_manual <- c(
+  "bec",
+  "category",
+  "basal_area",
+  "elev_cv",
+  "elev_mean",
+  "elev_p95",
+  "elev_stddev",
+  "gross_stem_volume",
+  "loreys_height",
+  "percentage_first_returns_above_2m",
+  "percentage_first_returns_above_mean",
+  "total_biomass",
+  "CumDHI",
+  "MinDHI",
+  "VarDHI"
+)
+
+# names(bec_df) <- names(all_rasts)
+names(bec_df) <- names_manual
+
+bec_normal <- bec_df %>%
+  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
+```
+
+```{r bec-nest}
+to_nest <- bec_normal %>%
+  select(-percentage_first_returns_above_mean,
+         -loreys_height,
+         -elev_stddev,
+         -elev_mean)
+
+bec_nested <- to_nest %>%
+  group_by(bec) %>%
+  nest() %>%
+  ungroup() %>%
+  rename(strata = bec)
+
+class_nested <- to_nest %>%
+  group_by(category) %>%
+  nest() %>%
+  ungroup() %>%
+  rename(strata = category)
+
+set.seed(69420)
+
+strata_nested <- bind_rows(bec_nested, class_nested) %>%
+  mutate(data = map(data, slice_sample, n = 500))
+# this slice sample is the ANALYTICAL difference between 4_vegan and 
+# 4_vegan_clean, other than the actual cleanup of the .rmd file
+
+global <- strata_nested %>%
+  filter(strata %in% zones) %>%
+  unnest(data)
+```
+
+```{r global-model}
+forest_types <- global %>%
+  pull(category) %>%
+  unique()
+
+dhi_tab <- global %>%
+  select(ends_with("DHI"))
+
+primary <- global %>%
+  select(elev_p95,
+         elev_cv,
+         percentage_first_returns_above_2m)
+
+modelled <- global %>%
+  select(basal_area,
+         total_biomass,
+         gross_stem_volume)
+
+
+
+rda_out <-
+  rda(
+    dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/primary
+      basal_area + gross_stem_volume + total_biomass,
+    # modelled
+    data = global
+  )
+
+ordiplot(rda_out, choices = c(1, 2))
+
+rda_sum <- summary(rda_out)
+
+var_exp <- rda_sum$constr.chi / rda_sum$tot.chi
+
+rda_eig <- rda_out$CCA$eig %>%
+  as.data.frame() %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble() %>%
+  pivot_longer(cols = everything()) %>%
+  mutate(prop = value / sum(value),
+         var_exp = prop * var_exp)
+
+rcorr <- summary(rda_out)$sites %>%
+  as.data.frame() %>%
+  select(starts_with("RDA")) %>%
+  bind_cols(global) %>%
+  select(-strata,-category) %>%
+  as.matrix() %>%
+  Hmisc::rcorr()
+
+rvals <- rcorr$r %>%
+  as.data.frame() %>%
+  select(starts_with("RDA")) %>%
+  mutate(var = row.names(.)) %>%
+  pivot_longer(starts_with("RDA"),
+               values_to = "axis_loading",
+               names_to = "axis") %>%
+  filter(!startsWith(var, "RDA"))
+
+pvals <- rcorr$P %>%
+  as.data.frame() %>%
+  select(starts_with("RDA")) %>%
+  mutate(var = row.names(.)) %>%
+  pivot_longer(starts_with("RDA"),
+               values_to = "axis_p",
+               names_to = "axis") %>%
+  filter(!startsWith(var, "RDA"))
+
+all_data_loadings <- left_join(rvals, pvals) %>%
+  filter(axis != "RDA3") %>%
+  mutate(sig = cut(
+    axis_p,
+    breaks = c(0, 0.001, 0.01, 0.05, .10, 1),
+    labels = c("***", "**", "*", ".", "NS"),
+    right = F
+  ))
+
+var_out <- varpart(dhi_tab, primary, modelled)
+
+var_out %>%
+  plot(Xnames = c("Primary", "Modelled"))
+
+path_r2 <- var_out$part$indfract %>%
+  mutate(type = c("primary", "modelled", "overlap", "residual")) %>%
+  select(type, Adj.R.squared) %>%
+  tibble()
+```
+
+
+```{r r2-global}
+RsquareAdj(rda_out)$adj.r.squared
+```
+
+```{r anova-global}
+anova.cca(rda_out, step = 1000)
+
+anova_out <- rda_out  %>%
+  anova(by = "axis")
+
+anova_out$`Pr(>F)` %>%
+  as.data.frame() %>%
+  rename(p_value = 1) %>%
+  drop_na() %>%
+  mutate(sig = cut(p_value, 
+                   breaks = c(0, 0.001, 0.01, 0.05, .10, 1),
+                   labels = c("***", "**", "*", ".", "NS"))) %>%
+  mutate(axis = paste0("RDA", row_number())) %>%
+  relocate(axis)
+```
+
+
+
+```{r}
+# linear relationships * homoschedasticity check
+
+bec_normal %>%
+  pivot_longer(cols = ends_with("DHI"),
+               names_to = "dhi",
+               values_to = "dhi_val") %>%
+  pivot_longer(
+    cols = basal_area:total_biomass,
+    names_to = "struct",
+    values_to = "struct_val"
+  ) %>%
+  ggplot(aes(x = struct_val, y = dhi_val)) +
+  geom_hex() +
+  facet_grid(rows = vars(dhi),
+             cols = vars(struct),
+             scales = "free") +
+  labs(x = "Structure Value (Normalized)",
+       y = "DHI Value (Normalized)")
+```
+
+```{r rda-var-funs}
+# function to take a tibble and get a list out outputs that can then be unnested and examined as needed. function(tibble) gets rda and varpart, as plottable objects ideally. then get the var_out$part$indfract. i'll also need to look at the significance using an anova at some point
+
+my_rda_fun <- function(tibble) {
+  dhi_tab <- tibble %>%
+    select(ends_with("DHI"))
+  
+  rda(dhi_tab ~ elev_p95 + percentage_first_returns_above_2m + elev_cv + # simple/raw/primary
+      basal_area + gross_stem_volume + total_biomass, # modelled, put condition here for a conditional rda
+      data = tibble)
+}
+
+my_var_fun <- function(tibble) {
+  dhi_tab <- tibble %>%
+    select(ends_with("DHI"))
+  
+  primary <- tibble %>%
+    select(elev_p95,
+           elev_cv,
+           # elev_stddev,
+           percentage_first_returns_above_2m)
+  
+  modelled <- tibble %>%
+    select(basal_area,
+           total_biomass,
+           gross_stem_volume)
+  
+  varpart(dhi_tab, primary, modelled)
+}
+```
+
+```{r rda-var-bec}
+outs <- strata_nested %>%
+  mutate(rda = map(data, my_rda_fun, .progress = "RDA"),
+         var = map(data, my_var_fun, .progress = "VAR")) 
+```
+
+```{r fracts-out}
+fracts_out <- outs %>%
+  mutate(indfracts = map(var, .f = function(x) {
+    x$part$indfract %>%
+      mutate(type = c("primary", "modelled", "overlap", "residual")) %>%
+      select(type, Adj.R.squared) %>%
+      pivot_wider(names_from = type, values_from = Adj.R.squared)
+    }
+    )) %>%
+  unnest(indfracts) %>%
+  arrange(desc(residual)) %>%
+  select(strata, primary, modelled, overlap) %>%
+  pivot_longer(c(primary, modelled, overlap)) %>%
+  mutate(value = ifelse(value > 0, value, 0)) %>%
+  pivot_wider()
+
+fracts_out %>% 
+  mutate(total = primary + modelled + overlap) %>%
+  arrange(strata %in% forest_types,
+          desc(total))
+```
+
+Fracts Bar Plot (Figure)
+
+```{r}
+fract_all <- path_r2 %>% 
+  pivot_wider(names_from = type, values_from = Adj.R.squared) %>% 
+  select(-residual) %>%
+  mutate(strata = "British Columbia") %>% 
+  relocate(strata)
+
+fracts_all <- bind_rows(fracts_out,
+                        fract_all)
+
+fracts_tot <- fracts_all %>% 
+  mutate(total = primary + modelled + overlap) %>%
+  select(strata, total)
+
+fracts_bar_tab <- fracts_all %>%
+  pivot_longer(-strata) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Types", group),
+         group = ifelse(strata == "British Columbia", "BC", group)) %>%
+  left_join(fracts_tot) %>%
+  mutate(zone_nm = ifelse(is.na(zone_nm), strata, zone_nm))
+
+
+fracts_bar_tab
+
+fracts_bar_plot <- fracts_bar_tab %>%
+  ggplot(aes(x = value, y = fct_reorder(zone_nm, total), fill = str_to_title(name))) +
+  geom_col(position = "stack", col = "white") +
+  facet_grid(rows = vars(fct_reorder(group, total, .desc = T)),
+             scales = "free_y",
+             space = "free") +
+  labs(x = "Variance Explained",
+       y = NULL,
+       fill = NULL) +
+  theme(legend.position = "bottom",
+        panel.spacing.y = unit(0, "lines")) +
+  guides(fill = guide_legend(reverse = T)) +
+  scale_x_continuous(labels = scales::label_percent()) +
+  scale_fill_manual(values = c("#6666ff", "#c22966", "#ff6666"))
+
+fracts_bar_plot
+ggsave(here::here("outputs", "fracts_bar_plot.png"), plot = fracts_bar_plot,
+       height = 6, width = 8)
+```
+
+```{r boxplots-dhi-bec}
+bec_df %>%
+  select(bec, ends_with("DHI")) %>%
+  pivot_longer(cols = ends_with("DHI")) %>%
+  group_by(name) %>% 
+  left_join(keys$bec, by = c("bec" = "zone")) %>%
+  mutate(bec = fct_reorder(bec, value)) %>%
+  ggplot(aes(x = value, y = bec, fill = group)) +
+  geom_boxplot() +
+  facet_wrap(~name, scales = "free") +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x = "DHI Value",
+       y = NULL,
+       fill = NULL) +
+  scale_fill_discrete_c4a_cat(palette = "batlow")
+```
+
+```{r eig-anova}
+eig_outs <- outs %>%
+  mutate(eig = map(
+    rda,
+    .f = function(rda) {
+      rda_sum <- summary(rda)
+      
+      var_exp <- rda_sum$constr.chi / rda_sum$tot.chi
+      
+      rda_eig <- rda$CCA$eig %>%
+        as.data.frame() %>%
+        t() %>%
+        as.data.frame() %>%
+        tibble() %>%
+        pivot_longer(cols = everything(), names_to = "axis",
+                     values_to = "eigenvalue") %>%
+        mutate(prop = eigenvalue / sum(eigenvalue),
+               var_exp = prop * var_exp)
+    }
+  )) %>%
+  unnest(eig) %>%
+  select(strata, axis:var_exp)
+
+anova_outs <- outs %>%
+  mutate(
+    anova = map(rda, .f = function(rda) {
+      anova_out <- rda  %>%
+        anova(by = "axis")
+      
+      anova_out$`Pr(>F)` %>%
+        as.data.frame() %>%
+        rename(anova_p = 1) %>%
+        drop_na() %>%
+        mutate(anova_sig = cut(
+          anova_p,
+          breaks = c(0, 0.001, 0.01, 0.05, .10, 1),
+          labels = c("***", "**", "*", ".", "NS")))  %>%
+        mutate(axis = paste0("RDA", row_number())) %>%
+        relocate(axis)
+  }, .progress = "anovas"))
+
+anova_sig_axes <- anova_outs %>%
+  select(strata, anova) %>%
+  unnest(cols = anova) # %>%
+  # filter(anova_sig != "NS")
+
+axis_varexp <- anova_sig_axes %>%
+  inner_join(eig_outs)
+
+axis_varexp %>%
+  filter(anova_sig != "NS") %>%
+  filter(strata %in% forest_types)
+
+axis_varexp %>%
+  group_by(strata) %>%
+  # filter(n() == 2) %>%
+  select(strata, axis, var_exp) %>% 
+  pivot_wider(names_from = axis,
+              values_from = var_exp) %>%
+  mutate(ratio = RDA1 / RDA2)
+
+# smaller ratios present when the RDA1 doesn't explain much. when variance explained
+# is low, the ratio is low. this is because there isn't much variance explained
+```
+
+```{r varexp}
+rda_varexp <- outs %>%
+  mutate(varexp = map(rda, .f = \(rda) {
+    rda_sum <- summary(rda)
+    var_exp <- rda_sum$constr.chi / rda_sum$tot.chi
+  })) %>%
+  unnest(varexp) %>%
+  arrange(desc(varexp)) %>%
+  select(strata, varexp)
+
+rda_varexp %>%
+  arrange(strata %in% forest_types,
+          desc(varexp))
+```
+
+```{r bec-loadings}
+out_loadings <- outs %>%
+  mutate(loadings = map(rda, .f = function(rda) {
+    summary(rda)$sites %>%
+      as.data.frame() %>%
+      select(starts_with("RDA"))
+  }),
+  loadings = map2(.x = loadings, .y = data, .f = bind_cols),
+  loadings = map(loadings, .f = function(x) {
+    rcorr <- x %>% select(-any_of(c("bec", "category"))) %>%
+      as.matrix() %>%
+      Hmisc::rcorr()
+    
+    rvals <- rcorr$r %>%
+      as.data.frame() %>%
+      select(starts_with("RDA")) %>%
+      mutate(var = row.names(.)) %>%
+      pivot_longer(starts_with("RDA"),
+                   values_to = "axis_loading",
+                   names_to = "axis") %>%
+      filter(!startsWith(var, "RDA"))
+    
+    pvals <- rcorr$P %>%
+      as.data.frame() %>%
+      select(starts_with("RDA")) %>%
+      mutate(var = row.names(.)) %>%
+      pivot_longer(starts_with("RDA"),
+                   values_to = "axis_p",
+                   names_to = "axis") %>%
+      filter(!startsWith(var, "RDA"))
+    
+    left_join(rvals, pvals) %>%
+      mutate(n = rcorr$n[[1, 1]])
+  }
+  
+  )) %>%
+  select(strata, loadings) %>%
+  unnest(loadings)
+```
+
+```{r}
+sig_loads <- out_loadings %>% 
+  mutate(loading_sig = cut(
+          axis_p,
+          breaks = c(0, 0.001, 0.01, 0.05, .10, 1),
+          labels = c("***", "**", "*", ".", "NS"),
+          right = F)) %>%
+  inner_join(anova_sig_axes) %>%
+  #filter(axis_sig == "NS") %>%
+  arrange(desc(abs(axis_loading))) %>%
+  filter(!(var %in% c("percentage_first_returns_above_mean", 
+                    "elev_mean", 
+                    "elev_stddev"))) %>%
+  drop_na()# removes ima mindhi which has no variance
+
+sig_loads %>%
+  filter(anova_sig != "NS") %>%
+  filter(endsWith(var, "DHI"),
+         axis == "RDA2") %>%
+  arrange(strata) %>%
+  select(strata, var, axis_loading) %>%
+  pivot_wider(names_from = var,
+              values_from = axis_loading)
+# when a second axis is present, it has a weak loading on the cumulative DHI, as compared to the other DHIs
+# while the majority of the variability is contained within all three DHIs together, the second axis, when present, is more linked to the minmimum and variation DHI.
+
+clean_loads_raw <- sig_loads %>%
+  filter(anova_sig != "NS",
+         loading_sig != "NS") %>%
+  bind_rows(all_data_loadings %>%
+              mutate(strata = "British Columbia") %>%
+              rename(loading_sig = sig)) %>%
+  select(strata:axis_loading) 
+
+clean_loads_abs <- clean_loads_raw %>%
+  mutate(axis_loading = abs(axis_loading))
+```
+
+# run to here for analysis to be done
+
+# drawio
+
+```{r drawio}
+
+# make dir
+drawio_dir <- here::here("outputs", "drawio")
+
+dir.create(drawio_dir, showWarnings = F)
+
+# templates
+one_rda <-
+  read_lines(here::here(drawio_dir, "_rda_path-text_replace-RDA1.drawio"))
+
+two_rda <-
+  read_lines(here::here(drawio_dir, "_rda_path-text_replace-RDA2.drawio"))
+
+# list to iterate
+stratum <- clean_loads_raw %>%
+  pull(strata) %>%
+  unique()
+
+
+# make sure everything gets change in rda fig
+possibles <- clean_loads_raw %>%
+  select(var, axis) %>%
+  complete() %>%
+  mutate(possible = paste(var, axis, sep = "-")) %>%
+  pull(possible) %>%
+  unique()
+
+
+# fractions dfs
+fract_all <- path_r2 %>% 
+  pivot_wider(names_from = type, values_from = Adj.R.squared) %>% 
+  select(-residual) %>%
+  mutate(strata = "British Columbia") %>% 
+  relocate(strata)
+
+fracts_all <- fracts_out %>%
+  bind_rows(fract_all)
+
+# variance explained by axis
+
+all_varexp <- rda_eig %>%
+  filter(name != "RDA3") %>%
+  mutate(strata = "British Columbia") %>%
+  rename(axis = name) %>%
+  select(-value)
+
+varexp_all <- axis_varexp %>%
+  filter(anova_sig != "NS") %>%
+  select(strata, axis, prop, var_exp) %>%
+  bind_rows(all_varexp)
+
+
+
+for (s in stratum) {
+  print(s)
+  strata_tp <- clean_loads_raw %>%
+    filter(strata == s) %>%
+    mutate(textreplace = paste(var, axis, sep = "-"),
+           axis_loading = as.character(round(axis_loading, digits = 2)))
+  
+  if (strata_tp %>% pull(axis) %>% unique() %>% length() == 1) {
+    strata_drawio <- one_rda
+  } else {
+    strata_drawio <- two_rda
+  }
+  
+  textreplace <- strata_tp %>%
+    pull(textreplace)
+  
+  replaceval <- strata_tp %>%
+    pull(axis_loading)
+  
+  for (i in 1:length(textreplace)) {
+    text <- textreplace[[i]]
+    val <- replaceval[[i]]
+    
+    strata_drawio <- str_replace(strata_drawio, text, val)
+  }
+  
+  strata_drawio <- str_replace(strata_drawio, "title_strata", s)
+  
+  #strata_drawio <- strata_drawio[!str_detect(strata_drawio, "RDA")]
+  # filter through all possibilities remaining, replace them with NS
+  
+  for (p in possibles) {
+    strata_drawio <- str_replace(strata_drawio, p, "NS")
+  }
+  
+  strata_fract <- fracts_all %>%
+    filter(strata == s) %>%
+    pivot_longer(primary:overlap) %>%
+    mutate(value = (value * 100) %>%
+             round(1) %>%
+             paste0(., "%"))
+  
+  fract_names <- strata_fract %>%
+    pull(name)
+  
+  fract_value <- strata_fract %>%
+    pull(value)
+  
+  for (i in 1:length(fract_names)) {
+    strata_drawio <-
+      str_replace(strata_drawio, fract_names[[i]], fract_value[[i]])
+  }
+  
+  strata_varexp <- varexp_all %>%
+    filter(strata == s) %>%
+    mutate(var_exp = (var_exp * 100) %>%
+             round(1) %>%
+             paste0(., "%"))
+  
+  axis_names <- strata_varexp %>%
+    pull(axis) %>%
+    paste("var_exp", ., sep = "-")
+  
+  axis_vals <- strata_varexp %>%
+    pull(var_exp)
+  
+  for (i in 1:length(axis_names)) {
+    strata_drawio <-
+      str_replace(strata_drawio, axis_names[[i]], axis_vals[[i]])
+  }
+  
+  write_lines(strata_drawio, here::here(drawio_dir, paste0(s, ".drawio")))
+}
+
+file.copy(here::here("outputs", "drawio", "British Columbia.drawio"), here::here("outputs", "British Columbia.drawio"), overwrite = T)
+```
+
+Climate Table (Table 2)
+
+```{r bec-clim-tab}
+climate_folder <- here::here("data", "climate")
+clim_vars <- climate_folder %>%
+  list.files(pattern = "csv$") %>%
+  tools::file_path_sans_ext()
+
+clim_vars <- clim_vars[!str_detect(clim_vars, "bec")]
+
+bec_clim <- climate_folder %>%
+  list.files(pattern = "bec.csv$",
+             full.names = T) %>%
+  read_csv() %>%
+  mutate(var = clim_vars %>% rep(16) %>% sort) %>%
+  select(bec = ZONE, mean = MEAN, var) %>%
+  pivot_wider(values_from = mean,
+              names_from = var)
+
+bec_tab <- keys$bec %>%
+  left_join(bec_clim, by = c("zone" = "bec")) %>%
+  select(-order) %>%
+  arrange(group, zone) %>%
+  relocate(group) %>%
+  mutate(across(ppt:tmin, \(x) round(x, digits = 1))) %>%
+  left_join(strata_nested %>% unnest(data) %>% count(strata),
+            by = c("zone" = "strata"))
+
+write_csv(bec_tab, here::here("data", "climate.csv"))
+
+knitr::kable(bec_tab)
+```
+
+# rgb map
+
+```{r}
+bec_dissolve <- read_sf(here::here("data", "shapefiles", "bec_dissolve.shp")) %>%
+  janitor::clean_names() %>%
+  select(zone)
+
+# normalized to max
+loadings_rgb <- clean_loads_abs %>% 
+  group_by(var) %>%
+  mutate(axis_loading = axis_loading / max(axis_loading)) %>%
+  group_by(axis) %>%
+  pivot_wider(names_from = var,
+              values_from = axis_loading) %>%
+  ungroup() %>%
+  replace(is.na(.), 0) %>%
+  #mutate(across(elev_cv:elev_p95, \(x) ifelse(x > 0.5, 0.5, x))) %>%
+  mutate(dhi_rgb = rgb(CumDHI, VarDHI, MinDHI),
+         pri_rgb = rgb(elev_p95, percentage_first_returns_above_2m, elev_cv, maxColorValue = 1),
+         mod_rgb = rgb(basal_area, total_biomass, gross_stem_volume, maxColorValue = 1)) %>%
+  #select(strata, axis, percentage_first_returns_above_2m, elev_p95, elev_cv, ends_with("rgb")) %>%
+  pivot_longer(ends_with("rgb"))
+
+rgb_loads_split <- loadings_rgb %>%
+  filter(strata %in% zones) %>%
+  group_by(axis, name) %>%
+  group_split()
+```
+
+```{r}
+make_rgb_map <- function(tibble) {
+  
+  input <- bec_dissolve %>%
+    left_join(tibble, by = c("zone" = "strata")) %>%
+    mutate(value = ifelse(is.na(value), "#000000", value))
+
+  rgb_cols = input %>%
+    st_drop_geometry() %>%
+    pull(value) %>%
+    unique() %>%
+    sort()
+  
+  input %>%
+    ggplot(aes(x = zone, y = 2, fill = value)) +
+    geom_col() +
+    scale_fill_manual(values = rgb_cols)
+  
+   input %>%
+    ggplot() +
+    geom_sf(aes(geometry = geometry, fill = value, col = value), linewidth = 0.1) +
+    scale_fill_manual(values = rgb_cols) +
+    scale_color_manual(values = rgb_cols) +
+    theme_void() +
+    theme(legend.position = "none")
+}
+
+rgb_maps <- map(rgb_loads_split, make_rgb_map)
+
+cowplot_rgb <- cowplot::plot_grid(rgb_maps[[3]], rgb_maps[[2]],
+                                  rgb_maps[[6]], rgb_maps[[5]],
+                                  labels = c("A - Primary RDA1", "B - Modelled RDA1",
+                                             "C - Primary RDA2", "D - Modelled RDA2"),
+                                  vjust = 1.25)
+
+ggsave(here::here("outputs", "rgbplots_cow.png"), cowplot_rgb, height = 7, width = 8, bg = "white")
+
+```
+
+# flip cum to positive
+
+```{r}
+flip_cum <- function(data) {
+  if(data %>% filter(var == "CumDHI") %>% nrow() == 0) {
+    return(data)
+  }
+  flip <- data %>%
+    filter(var == "CumDHI") %>%
+    pull(axis_loading) %>%
+    sign()
+  
+  data %>% mutate(axis_loading = axis_loading * flip)
+}
+
+clean_loads_cum_pos <- clean_loads_raw %>%
+  group_by(strata, axis) %>%
+  group_split() %>%
+  map_dfr(., .f = flip_cum)
+
+clean_loads_cum_pos %>%
+  filter(strata %in% zones) %>%
+  count(var, axis, sign = sign(axis_loading)) %>%
+  pivot_wider(names_from = sign, values_from = n) %>%
+  arrange(axis)
+
+clean_loads_joined <- clean_loads_cum_pos %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  left_join(keys$continuous %>%
+              select(var = variable, var_long)) %>%
+  mutate(
+    group = ifelse(is.na(group), strata, group),
+    var_long = ifelse(is.na(var_long), var, var_long),
+    pos_neg = ifelse(axis_loading > 0, "Positive", "Negative")
+  )
+
+```
+
+Parcoord Noflip (Figure)
+
+```{r}
+data_parcoord <- clean_loads_joined %>%
+  # mutate(axis_loading = abs(axis_loading)) %>%
+  group_by(group, var_long, axis) %>%
+  summarize(axis_loading = mean(axis_loading)) %>%
+  ungroup() %>%
+  complete(group, var_long, axis, fill = list(axis_loading = NA)) %>%
+  mutate(inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"), 
+         group = fct_relevel(group, "British Columbia", 
+                             "Broadleaf", 
+                             "Coniferous", 
+                             "Mixed Wood", 
+                             "Wetland-Treed", 
+                             after = 0),
+         var_long = ifelse(endsWith(var_long, "DHI"), var_long, str_replace_all(var_long, " ", "\n")),
+         var_long = fct_relevel(var_long, 
+                                c("Structural\nComplexity", "Canopy\nHeight", "Canopy\nCover",
+                                "Basal\nArea", "Aboveground\nBiomass", "Gross\nStem\nVolume",
+                                "Cumulative DHI", "Variation DHI", "Minimum DHI")))
+  
+
+# nojitter/lines
+parcoord_noflip <- data_parcoord %>%
+  ggplot(aes(x = var_long, y = axis_loading)) +
+  #geom_boxplot(col = "#00000025", outlier.alpha = 0) +
+  
+  geom_line(aes(col = group, group = group), lty = "dashed") +
+  geom_point(aes(col = group, group = group, shape = group, fill = group)) +
+  geom_hline(yintercept = 0, lty = "dotted", col = "grey", linewidth = 0.5) +
+  facet_wrap(~paste(axis, inout),
+             scale = "free") +
+  #theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading",
+       col = NULL,
+       shape = NULL,
+       fill = NULL) +
+  # coord_flip() +
+  scale_colour_discrete_c4a_cat(palette = "bold") +
+  scale_fill_discrete_c4a_cat(palette = "bold") +
+  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25))
+
+parcoord_noflip
+
+ggsave(here::here("outputs", "parcoord_noflip.png"), plot = parcoord_noflip,
+       height = 6, width = 8)
+
+# ggsave(here::here("outputs", "parcoord_noflip.svg"), plot = parcoord_noflip,
+#        height = 6, width = 8)
+```
+
+# meg scatterplots
+
+```{r}
+scatter <- bec_normal %>%
+  mutate(label = case_when(bec %in% c("CWH", "MS") ~ bec,
+                           T ~ "Other"))
+
+ggplot(data = scatter, aes(col = label), alpha = 0.25) +
+  geom_point(aes(x = percentage_first_returns_above_2m, y = CumDHI)) +
+  geom_density(aes(x = percentage_first_returns_above_2m)) +
+  geom_density(aes(y = CumDHI)) +
+  scale_fill_manual(values = c("grey", "red", "blue")) +
+  scale_colour_manual(values = c("grey", "red", "blue"))
+
+ggplot() +
+  geom_point(data = bec_df, aes(x = percentage_first_returns_above_2m, y = CumDHI), alpha = 0.5) +
+  geom_point(data = bec_df %>%
+               filter(bec == "CWH"), aes(x = percentage_first_returns_above_2m, y = CumDHI), col = "orange") +
+  geom_point(data = bec_df %>%
+               filter(bec == "MS"), aes(x = percentage_first_returns_above_2m, y = CumDHI), col = "red") +
+  geom_histogram(data = bec_df, aes(x = percentage_first_returns_above_2m)) +
+  geom_histogram(data = bec_df, aes(y = CumDHI))
+```
+
+```{r}
+fracts_out
+
+strata_nested %>% 
+  unnest(cols = data) %>%
+  select(-bec, -category) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Type", group)) %>%
+  ggplot() +
+  geom_boxplot(aes(x = fct_reorder(.f = strata, .x = MinDHI, .fun = mean), y = MinDHI, fill = group))
+```
+
+```{r}
+strata_nested %>% 
+  unnest(cols = data) %>%
+  select(-bec, -category) %>%
+  group_by(strata) %>%
+  summarize(across(basal_area:VarDHI, .fns = sd)) %>%
+  left_join(keys$bec, by = c("strata" = "zone")) %>%
+  mutate(group = ifelse(is.na(group), "Forest Type", group)) %>%
+  select(strata, group, basal_area:VarDHI) %>%
+  pivot_longer(-c(strata, group)) %>%
+  left_join(fracts_out) %>%
+  mutate(varexp = primary + modelled + overlap) %>%
+  ggplot(aes(x = value, y = varexp, col = group)) +
+  geom_point() +
+  facet_wrap(~name, strip.position = "bottom") +
+  labs(x = NULL,
+       y = "Variation Explained",
+       title = "x axis is sd of variable") +
+  theme(strip.placement = "outside",
+        strip.background = element_blank())
+```
+
+Supplemental information Hexplot template
+
+```{r}
+bec_df %>%
+  left_join(fracts_out %>%
+              mutate(all = (primary + modelled + overlap) * 100) %>%
+              select(strata, all), by = c("bec" = "strata")) %>%
+  mutate(facet = paste0(bec, " (", round(all, 2), "%)")) %>%
+  ggplot(aes(x = percentage_first_returns_above_2m / 100, y = CumDHI)) +
+  geom_hex(aes(fill = after_stat(log(count)))) +
+  labs(x = "Canopy Cover (%)") +
+  facet_wrap(~fct_reorder(facet, all)) +
+  theme(legend.position = "bottom")
+
+ggsave(here::here("outputs", "supplement_hex.png"),
+       height = 6, width = 8)
+```
+
+IQR sorted plot of canopy cover
+
+```{r iqr-plot}
+strata_nested %>% 
+  unnest(data) %>% 
+  ggplot(aes(x = fct_reorder(strata, percentage_first_returns_above_2m, IQR), y = percentage_first_returns_above_2m)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Study Area Map (Figure 1)
+
+```{r study-map}
+library(geodata)
+
+provinces <- geodata::gadm(country = "Canada", level = 1, path = here::here("data", "province"))
+
+prov_sf <- provinces %>%
+  st_as_sf() %>%
+  st_transform(3005)
+
+bbox <- prov_sf %>%
+  filter(NAME_1 == "British Columbia") %>%
+  st_bbox()
+
+usa <- geodata::gadm(country = "USA", level = 0, path = here::here("data", "usa")) %>%
+  st_as_sf()
+
+countries <- geodata::world(level = 0, path = here::here("data", "world")) %>%
+  st_as_sf()
+
+na_bbox <- countries %>%
+  filter(GID_0 == "USA" |
+         NAME_0 == "Canada") %>%
+  st_bbox()
+
+cad_bbox <- prov_sf %>%
+  st_transform(3348) %>%
+  st_bbox()
+
+countries_map <- countries %>%
+  filter(GID_0 == "USA" |
+         NAME_0 == "Greenland") %>%
+  st_transform(3348)
+
+lakes <- read_sf(here::here("data", "great_lakes", "great_lakes.shp")) %>%
+  st_transform(3348)
+
+bec_map <- ggplot() +
+  geom_sf(data = bcmaps::bc_bound(),
+          fill = "grey70", col = NA) +
+  geom_sf(
+    data = prov_sf %>% filter(NAME_1 != "British Columbia"),
+    fill = "grey70"
+  ) +
+  geom_sf(data = usa,
+          fill = "grey50") +
+  geom_sf(data = bec_dissolve %>%
+            left_join(keys$bec),
+          aes(fill = fct_reorder(zone_nm, zone)),
+          colour = NA) +
+  ggsci::scale_fill_igv() +
+  labs(fill = NULL,
+       linetype = NULL) +
+  coord_sf(
+    xlim = c(bbox$xmin - 300000, bbox$xmax),
+    ylim = c(bbox$ymin, bbox$ymax),
+    crs = 3005,
+    datum = 4326
+  ) +
+  theme_grey() +
+  theme(
+    panel.background = element_rect(fill = "#525252"),
+    panel.border = element_rect(colour = "black", fill = NA),
+    legend.position = c(.15, .4),
+    legend.background = element_rect(fill = NA),
+    legend.box.background = element_rect(fill = "white")
+  )
+
+#ggsave(here::here("outputs", "bec_map_no_inset.png"), bec_map, device = "png")
+
+inset = ggplot() +
+  geom_sf(data = countries_map, fill = "grey50") +
+  geom_sf(data = prov_sf %>% st_transform(3348) %>% filter(NAME_1 != "British Columbia"), fill = "grey70", size = 0.5) +
+  geom_sf(data = prov_sf %>% st_transform(3348) %>% filter(NAME_1 == "British Columbia"), fill = "#e5e5e5", size = 0.5) +
+  geom_sf(data = lakes, fill = "#525252") +
+  geom_sf(data = bbox %>% st_as_sfc %>% st_transform(3348), fill = NA, colour = "red", size = 2) +
+  coord_sf(xlim = c(cad_bbox$xmin - 300000, cad_bbox$xmax),
+           ylim = c(cad_bbox$ymin, cad_bbox$ymax)) +
+  theme_void() +
+  theme(panel.border = element_rect(colour = "black"),
+        panel.background = element_rect(fill = "#525252"))
+
+
+# map_inset <- ggdraw(bec_map) +
+#   draw_plot(inset, x = 0.7, y = 0.7, width = .28, height = .28)
+
+map_inset <- bec_map + inset_element(inset, left = 0.71,
+                                            bottom = 0.7,
+                                            right = 1,
+                                            top = 0.98, 
+                                     align_to = "plot")
+
+  
+ggsave(here::here("outputs", "bec_map.png"), plot = map_inset, device = "png", height = 7, width = 10)
+
+```
