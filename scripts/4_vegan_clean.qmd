@@ -83,39 +83,44 @@ names_manual <- c(
 # names(bec_df) <- names(all_rasts)
 names(bec_df) <- names_manual
 
-bec_normal <- bec_df %>%
-  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x))) 
-```
+set.seed(29640)
 
-```{r bec-nest}
-to_nest <- bec_normal %>%
+raw_sliced <- bec_df %>%
   select(-percentage_first_returns_above_mean,
          -loreys_height,
          -elev_stddev,
-         -elev_mean)
+         -elev_mean) %>%
+  group_by(bec) %>%
+  slice_sample(n = 500) %>%
+  ungroup()
 
-bec_nested <- to_nest %>%
+to_nest_normal <- raw_sliced %>% 
+  mutate(across(basal_area:VarDHI,  .fns = ~ normal(.x)))
+```
+
+```{r bec-nest}
+# already slice_sampled
+bec_nested <- to_nest_normal %>%
   group_by(bec) %>%
   nest() %>%
   ungroup() %>%
   rename(strata = bec)
 
-class_nested <- to_nest %>%
+# sample down to 500 here
+class_nested <- to_nest_normal %>%
   group_by(category) %>%
+  slice_sample(n = 500) %>%
   nest() %>%
   ungroup() %>%
   rename(strata = category)
 
-set.seed(69420)
 
-strata_nested <- bind_rows(bec_nested, class_nested) %>%
-  mutate(data = map(data, slice_sample, n = 500))
+
+strata_nested <- bind_rows(bec_nested, class_nested)
 # this slice sample is the ANALYTICAL difference between 4_vegan and 
 # 4_vegan_clean, other than the actual cleanup of the .rmd file
 
-global <- strata_nested %>%
-  filter(strata %in% zones) %>%
-  unnest(data)
+global <- to_nest_normal
 ```
 
 ```{r global-model}
@@ -165,7 +170,7 @@ rcorr <- summary(rda_out)$sites %>%
   as.data.frame() %>%
   select(starts_with("RDA")) %>%
   bind_cols(global) %>%
-  select(-strata,-category) %>%
+  select(-bec,-category) %>%
   as.matrix() %>%
   Hmisc::rcorr()
 
@@ -227,29 +232,6 @@ anova_out$`Pr(>F)` %>%
                    labels = c("***", "**", "*", ".", "NS"))) %>%
   mutate(axis = paste0("RDA", row_number())) %>%
   relocate(axis)
-```
-
-
-
-```{r}
-# linear relationships * homoschedasticity check
-
-bec_normal %>%
-  pivot_longer(cols = ends_with("DHI"),
-               names_to = "dhi",
-               values_to = "dhi_val") %>%
-  pivot_longer(
-    cols = basal_area:total_biomass,
-    names_to = "struct",
-    values_to = "struct_val"
-  ) %>%
-  ggplot(aes(x = struct_val, y = dhi_val)) +
-  geom_hex() +
-  facet_grid(rows = vars(dhi),
-             cols = vars(struct),
-             scales = "free") +
-  labs(x = "Structure Value (Normalized)",
-       y = "DHI Value (Normalized)")
 ```
 
 ```{r rda-var-funs}
@@ -441,6 +423,16 @@ axis_varexp %>%
 # is low, the ratio is low. this is because there isn't much variance explained
 ```
 
+```{r}
+egg <- anova.cca(rda_out, step = 1000)
+
+outs %>%
+  mutate(anova_sig = map(.x = rda, .f = \(x) {
+    anova.cca(rda, step = 1000)
+  })
+```
+
+
 ```{r varexp}
 rda_varexp <- outs %>%
   mutate(varexp = map(rda, .f = \(rda) {
@@ -536,6 +528,99 @@ clean_loads_abs <- clean_loads_raw %>%
 
 # run to here for analysis to be done
 
+# flip cum to positive
+
+```{r}
+flip_cum <- function(data) {
+  if(data %>% filter(var == "CumDHI") %>% nrow() == 0) {
+    return(data)
+  }
+  flip <- data %>%
+    filter(var == "CumDHI") %>%
+    pull(axis_loading) %>%
+    sign()
+  
+  data %>% mutate(axis_loading = axis_loading * flip)
+}
+
+clean_loads_cum_pos <- clean_loads_raw %>%
+  group_by(strata, axis) %>%
+  group_split() %>%
+  map_dfr(., .f = flip_cum)
+
+clean_loads_cum_pos %>%
+  filter(strata %in% zones) %>%
+  count(var, axis, sign = sign(axis_loading)) %>%
+  pivot_wider(names_from = sign, values_from = n) %>%
+  arrange(axis)
+
+clean_loads_joined <- clean_loads_cum_pos %>%
+  left_join(keys$bec %>%
+              select(strata = zone, group)) %>%
+  left_join(keys$continuous %>%
+              select(var = variable, var_long)) %>%
+  mutate(
+    group = ifelse(is.na(group), strata, group),
+    var_long = ifelse(is.na(var_long), var, var_long),
+    pos_neg = ifelse(axis_loading > 0, "Positive", "Negative")
+  )
+
+```
+
+Parcoord Noflip (Figure)
+
+```{r}
+data_parcoord <- clean_loads_joined %>%
+  # mutate(axis_loading = abs(axis_loading)) %>%
+  group_by(group, var_long, axis) %>%
+  summarize(axis_loading = mean(axis_loading)) %>%
+  ungroup() %>%
+  complete(group, var_long, axis, fill = list(axis_loading = NA)) %>%
+  mutate(inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"), 
+         group = fct_relevel(group, "British Columbia", 
+                             "Broadleaf", 
+                             "Coniferous", 
+                             "Mixed Wood", 
+                             "Wetland-Treed", 
+                             after = 0),
+         var_long = ifelse(endsWith(var_long, "DHI"), var_long, str_replace_all(var_long, " ", "\n")),
+         var_long = fct_relevel(var_long, 
+                                c("Structural\nComplexity", "Canopy\nHeight", "Canopy\nCover",
+                                "Basal\nArea", "Aboveground\nBiomass", "Gross\nStem\nVolume",
+                                "Cumulative DHI", "Variation DHI", "Minimum DHI")))
+  
+
+# nojitter/lines
+parcoord_noflip <- data_parcoord %>%
+  ggplot(aes(x = var_long, y = axis_loading)) +
+  #geom_boxplot(col = "#00000025", outlier.alpha = 0) +
+  
+  geom_line(aes(col = group, group = group), lty = "dashed") +
+  geom_point(aes(col = group, group = group, shape = group, fill = group)) +
+  geom_hline(yintercept = 0, lty = "dotted", col = "grey", linewidth = 0.5) +
+  facet_wrap(~paste(axis, inout),
+             scale = "free") +
+  #theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL,
+       y = "Axis Loading",
+       col = NULL,
+       shape = NULL,
+       fill = NULL) +
+  # coord_flip() +
+  scale_colour_discrete_c4a_cat(palette = "bold") +
+  scale_fill_discrete_c4a_cat(palette = "bold") +
+  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25))
+
+parcoord_noflip
+
+ggsave(here::here("outputs", "parcoord_noflip.png"), plot = parcoord_noflip,
+       height = 6, width = 8)
+
+# ggsave(here::here("outputs", "parcoord_noflip.svg"), plot = parcoord_noflip,
+#        height = 6, width = 8)
+```
+
 # drawio
 
 ```{r drawio}
@@ -553,13 +638,13 @@ two_rda <-
   read_lines(here::here(drawio_dir, "_rda_path-text_replace-RDA2.drawio"))
 
 # list to iterate
-stratum <- clean_loads_raw %>%
+stratum <- clean_loads_cum_pos %>%
   pull(strata) %>%
   unique()
 
 
 # make sure everything gets change in rda fig
-possibles <- clean_loads_raw %>%
+possibles <- clean_loads_cum_pos %>%
   select(var, axis) %>%
   complete() %>%
   mutate(possible = paste(var, axis, sep = "-")) %>%
@@ -594,7 +679,7 @@ varexp_all <- axis_varexp %>%
 
 for (s in stratum) {
   print(s)
-  strata_tp <- clean_loads_raw %>%
+  strata_tp <- clean_loads_cum_pos %>%
     filter(strata == s) %>%
     mutate(textreplace = paste(var, axis, sep = "-"),
            axis_loading = as.character(round(axis_loading, digits = 2)))
@@ -666,7 +751,23 @@ for (s in stratum) {
   write_lines(strata_drawio, here::here(drawio_dir, paste0(s, ".drawio")))
 }
 
-file.copy(here::here("outputs", "drawio", "British Columbia.drawio"), here::here("outputs", "British Columbia.drawio"), overwrite = T)
+# generate and run batch script to export all files to png, then copy the main
+# one to the main folder
+
+in_drawio <- list.files(here::here("outputs", "drawio"), full.names = T) %>%
+  str_subset("_rda", negate = T)
+
+out_drawio <- in_drawio %>%
+  str_replace("\\.drawio", ".png")
+
+bat_loc <- here::here("scripts", "export_drawio.bat")
+
+glue::glue('"C:/Program Files/draw.io/draw.io.exe" -x "{in_drawio}" -o "{out_drawio}"') %>%
+  write_lines(bat_loc)
+
+system2(bat_loc)
+
+file.copy(here::here("outputs", "drawio", "British Columbia.png"), here::here("outputs", "British Columbia.drawio.png"), overwrite = T)
 ```
 
 Climate Table (Table 2)
@@ -770,103 +871,12 @@ ggsave(here::here("outputs", "rgbplots_cow.png"), cowplot_rgb, height = 7, width
 
 ```
 
-# flip cum to positive
 
-```{r}
-flip_cum <- function(data) {
-  if(data %>% filter(var == "CumDHI") %>% nrow() == 0) {
-    return(data)
-  }
-  flip <- data %>%
-    filter(var == "CumDHI") %>%
-    pull(axis_loading) %>%
-    sign()
-  
-  data %>% mutate(axis_loading = axis_loading * flip)
-}
-
-clean_loads_cum_pos <- clean_loads_raw %>%
-  group_by(strata, axis) %>%
-  group_split() %>%
-  map_dfr(., .f = flip_cum)
-
-clean_loads_cum_pos %>%
-  filter(strata %in% zones) %>%
-  count(var, axis, sign = sign(axis_loading)) %>%
-  pivot_wider(names_from = sign, values_from = n) %>%
-  arrange(axis)
-
-clean_loads_joined <- clean_loads_cum_pos %>%
-  left_join(keys$bec %>%
-              select(strata = zone, group)) %>%
-  left_join(keys$continuous %>%
-              select(var = variable, var_long)) %>%
-  mutate(
-    group = ifelse(is.na(group), strata, group),
-    var_long = ifelse(is.na(var_long), var, var_long),
-    pos_neg = ifelse(axis_loading > 0, "Positive", "Negative")
-  )
-
-```
-
-Parcoord Noflip (Figure)
-
-```{r}
-data_parcoord <- clean_loads_joined %>%
-  # mutate(axis_loading = abs(axis_loading)) %>%
-  group_by(group, var_long, axis) %>%
-  summarize(axis_loading = mean(axis_loading)) %>%
-  ungroup() %>%
-  complete(group, var_long, axis, fill = list(axis_loading = NA)) %>%
-  mutate(inout = ifelse(endsWith(var_long, "DHI"), "Response", "Predictor"), 
-         group = fct_relevel(group, "British Columbia", 
-                             "Broadleaf", 
-                             "Coniferous", 
-                             "Mixed Wood", 
-                             "Wetland-Treed", 
-                             after = 0),
-         var_long = ifelse(endsWith(var_long, "DHI"), var_long, str_replace_all(var_long, " ", "\n")),
-         var_long = fct_relevel(var_long, 
-                                c("Structural\nComplexity", "Canopy\nHeight", "Canopy\nCover",
-                                "Basal\nArea", "Aboveground\nBiomass", "Gross\nStem\nVolume",
-                                "Cumulative DHI", "Variation DHI", "Minimum DHI")))
-  
-
-# nojitter/lines
-parcoord_noflip <- data_parcoord %>%
-  ggplot(aes(x = var_long, y = axis_loading)) +
-  #geom_boxplot(col = "#00000025", outlier.alpha = 0) +
-  
-  geom_line(aes(col = group, group = group), lty = "dashed") +
-  geom_point(aes(col = group, group = group, shape = group, fill = group)) +
-  geom_hline(yintercept = 0, lty = "dotted", col = "grey", linewidth = 0.5) +
-  facet_wrap(~paste(axis, inout),
-             scale = "free") +
-  #theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = NULL,
-       y = "Axis Loading",
-       col = NULL,
-       shape = NULL,
-       fill = NULL) +
-  # coord_flip() +
-  scale_colour_discrete_c4a_cat(palette = "bold") +
-  scale_fill_discrete_c4a_cat(palette = "bold") +
-  scale_shape_manual(values = c(21, 22, 22, 22, 22, 25, 25, 25, 25, 25))
-
-parcoord_noflip
-
-ggsave(here::here("outputs", "parcoord_noflip.png"), plot = parcoord_noflip,
-       height = 6, width = 8)
-
-# ggsave(here::here("outputs", "parcoord_noflip.svg"), plot = parcoord_noflip,
-#        height = 6, width = 8)
-```
 
 # meg scatterplots
 
 ```{r}
-scatter <- bec_normal %>%
+scatter <- raw_sliced %>%
   mutate(label = case_when(bec %in% c("CWH", "MS") ~ bec,
                            T ~ "Other"))
 
@@ -921,23 +931,7 @@ strata_nested %>%
         strip.background = element_blank())
 ```
 
-Supplemental information Hexplot template
 
-```{r}
-bec_df %>%
-  left_join(fracts_out %>%
-              mutate(all = (primary + modelled + overlap) * 100) %>%
-              select(strata, all), by = c("bec" = "strata")) %>%
-  mutate(facet = paste0(bec, " (", round(all, 2), "%)")) %>%
-  ggplot(aes(x = percentage_first_returns_above_2m / 100, y = CumDHI)) +
-  geom_hex(aes(fill = after_stat(log(count)))) +
-  labs(x = "Canopy Cover (%)") +
-  facet_wrap(~fct_reorder(facet, all)) +
-  theme(legend.position = "bottom")
-
-ggsave(here::here("outputs", "supplement_hex.png"),
-       height = 6, width = 8)
-```
 
 IQR sorted plot of canopy cover
 
@@ -1045,4 +1039,84 @@ map_inset <- bec_map + inset_element(inset, left = 0.71,
   
 ggsave(here::here("outputs", "bec_map.png"), plot = map_inset, device = "png", height = 7, width = 10)
 
+```
+
+Supplemental information Hexplot template
+
+```{r}
+bec_df %>%
+  left_join(fracts_out %>%
+              mutate(all = (primary + modelled + overlap) * 100) %>%
+              select(strata, all), by = c("bec" = "strata")) %>%
+  mutate(facet = paste0(bec, " (", round(all, 2), "%)")) %>%
+  ggplot(aes(x = percentage_first_returns_above_2m / 100, y = CumDHI)) +
+  geom_hex(aes(fill = after_stat(log(count)))) +
+  labs(x = "Canopy Cover (%)") +
+  facet_wrap(~fct_reorder(facet, all)) +
+  theme(legend.position = "bottom")
+
+ggsave(here::here("outputs", "supplement_hex.png"),
+       height = 6, width = 8)
+```
+
+Matrix of plots as requested by reviewer #4
+
+Density hexplots of forest structural attributes and the Dynamic Habitat Indices. Note the log scale.
+
+```{r}
+(hex_matrix_plot <- raw_sliced %>%
+  pivot_longer(cols = basal_area:total_biomass, names_to = "struct", values_to = "struct_vals") %>%
+  pivot_longer(ends_with("DHI"), names_to = "DHI", values_to = "dhi_vals") %>%
+  left_join(keys$continuous, by = c("struct" = "variable")) %>%
+  mutate(struct_vals = struct_vals / divide_by,
+         unit = ifelse(struct == "elev_cv", "", glue::glue("({unit})")),
+         label = glue::glue("{var_long} \n{unit}")) %>%
+  ggplot(aes(x = struct_vals, y = dhi_vals)) +
+  geom_hex(aes(fill = after_stat(log10(count)))) +
+  facet_grid(rows = vars(DHI),
+             cols = vars(label),
+             scales = "free",
+             switch = "both") +
+  labs(x = NULL,
+       y = NULL) +
+  scale_fill_continuous_c4a_seq(palette = "viridis") +
+  theme(legend.position = "bottom",
+        strip.placement = "outside",
+        strip.background = element_blank())
+
+)
+
+
+ggsave(here::here("outputs", "hex_matrix_plot.png"),
+       height = 6, width = 10)
+```
+
+```{r}
+# linear relationships * homoschedasticity check
+
+to_nest_normal %>%
+  pivot_longer(cols = ends_with("DHI"),
+               names_to = "dhi",
+               values_to = "dhi_val") %>%
+  pivot_longer(
+    cols = basal_area:total_biomass,
+    names_to = "struct",
+    values_to = "struct_val"
+  ) %>%
+  left_join(keys$continuous, by = c("struct" = "variable")) %>%
+  mutate(struct_vals = struct_val / divide_by,
+         unit = ifelse(struct == "elev_cv", "", glue::glue("({unit})")),
+         label = glue::glue("{var_long} \n{unit}")) %>%
+  ggplot(aes(x = struct_val, y = dhi_val)) +
+  geom_hex(aes(fill = after_stat(log10(count)))) +
+  facet_grid(rows = vars(dhi),
+             cols = vars(var_long),
+             scales = "free",
+             switch = "both") +
+  labs(x = "Structure Values (Normalized)",
+       y = "DHI Values (Normalized)") +
+  scale_fill_continuous_c4a_seq(palette = "viridis") +
+  theme(legend.position = "bottom",
+        strip.placement = "outside",
+        strip.background = element_blank())
 ```

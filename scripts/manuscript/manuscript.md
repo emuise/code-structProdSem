@@ -99,6 +99,7 @@ nocite: |
 :::
 
 
+
 \newpage
 
 **Abstract**
@@ -117,8 +118,8 @@ across a range of ecosystems encompassing significant environmental
 gradients. Redundancy analyses found that remote sensing indicators of
 forest structure were not strongly related to indicators of ecosystem
 productivity (represented by the Dynamic Habitat Indices, DHIs), with
-the structural information only explaining 16% of the variation in the
-DHIs. Complex metrics of forest structure, such as above ground biomass,
+the structural information only explaining 15.7% of the variation in the
+DHIs. Complex metrics of forest structure, such as aboveground biomass,
 did not contribute additional information over simpler height-based
 attributes that can be directly estimated with light detection and
 ranging (LIDAR) observations. With respect to ecosystem conditions, we
@@ -213,13 +214,13 @@ high leaf area index values [@myneni1994]. As a result, the strength of
 the relationship between spectral indices and productivity depends on
 the ecosystem type, land cover type, amount of canopy cover, and
 productivity in the region [@shi2017]. Likewise, relationships between
-productivity and biodiversity also contain uncertainty, recognizing that
-biodiversity is governed by a variety of factors of which productivity
-is but one [@skidmore2021]. Despite these uncertainties, remotely sensed
-vegetation indices have enabled the assessment of biodiversity patterns
-at single time points [@bonn2004; @nagendra2010; @phillips2008], or
-through time when using time series data [@berry2007; @radeloff2019;
-@coops2019]
+productivity indicators and biodiversity also contain uncertainty,
+recognizing that biodiversity is governed by a variety of factors of
+which productivity is but one [@skidmore2021]. Despite these
+uncertainties, remotely sensed vegetation indices have enabled the
+assessment of biodiversity patterns at single time points [@bonn2004;
+@nagendra2010; @phillips2008], or through time when using time series
+data [@berry2007; @radeloff2019; @coops2019]
 
 While biodiversity is not solely driven by productivity, the
 relationship between productivity and biodiversity can be explained
@@ -313,10 +314,10 @@ Second, we propose a method for selecting which remote sensing
 attributes to develop and apply within a single EBV class by determining
 the independent and shared contributions of lidar-derived forest
 structural attributes and modelled forest structure to explaining
-ecosystem function. Third, we examine the global applicability of these
-results by evaluating the consistency of the observed forest
-structure-function relationships across a broad range of environment
-gradients and forest types.
+ecosystem function. Third, we examine the potential geographic
+extensibility of these results by evaluating the consistency of the
+observed forest structure-function relationships across a broad range of
+environment gradients and forest types.
 
 # Methods and Materials
 
@@ -348,6 +349,7 @@ interior, Southern interior, Montane, Alpine, and Coastal groups,
 similar to Hamann et al. [@hamann2006]. We also report the average
 climate data for BEC zones from 1991-2020, according to Wang et al.
 [@wang2016] (Table 1).
+
 
 
 ::: {.cell}
@@ -407,7 +409,7 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="24"/>
       <w:color w:val="333333"/>
     </w:rPr>
-    <w:t xml:space="default">Biogeoclimatic Ecosystem Classification (BEC) Zones, their aggregated biomes, and their monthly average climate values for precipitation, maximum temperature, and minimum temperature. Climate data from Wang et al. 2016 averaged for 1991-2020.</w:t>
+    <w:t xml:space="default">Biogeoclimatic Ecosystem Classification (BEC) Zones, their aggregated biomes, monthly average climate values for precipitation, maximum temperature, and minimum temperature, and the number of samples taken from each BEC zone. Climate data from Wang et al. 2016 averaged for 1991-2020.</w:t>
   </w:r>
 </w:p><w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w:tblPr><w:tblCellMar><w:top w:w="0" w:type="dxa"></w:top><w:bottom w:w="0" w:type="dxa"></w:bottom><w:start w:w="60" w:type="dxa"></w:start><w:end w:w="60" w:type="dxa"></w:end></w:tblCellMar><w:tblW w:type="pct" w:w="100%"></w:tblW><w:tblLook w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="0" w:noVBand="0"></w:tblLook><w:jc w:val="center"></w:jc></w:tblPr><w:tr><w:trPr><w:cantSplit></w:cantSplit><w:tblHeader></w:tblHeader></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -474,7 +476,7 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">Average Monthly Max Temperature (°C)</w:t>
   </w:r>
-</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
     <w:spacing w:before="0" w:after="60"/>
     <w:keepNext/>
@@ -486,6 +488,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">Average Monthly Min Temperature (°C)</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:sz="16" w:space="0" w:color="D3D3D3"></w:bottom><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">n</w:t>
   </w:r>
 </w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -564,6 +579,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">-5.6</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -644,6 +672,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">-2.4</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
+  </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -722,6 +763,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">-4.2</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">173</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -802,6 +856,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">5.9</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
+  </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -880,6 +947,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">3.5</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -960,6 +1040,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">-3.1</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
+  </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -1038,6 +1131,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">-0.2</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -1118,6 +1224,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">-2.5</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
+  </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -1196,6 +1315,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">-5.3</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -1276,6 +1408,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">-3.7</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
+  </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -1354,6 +1499,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">-2.3</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -1434,6 +1592,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">-5.7</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
+  </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -1512,6 +1683,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">1.4</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">168</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -1592,6 +1776,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">-0.3</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
+  </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
   <w:pPr>
@@ -1670,6 +1867,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
       <w:sz w:val="20"/>
     </w:rPr>
     <w:t xml:space="default">-0.7</w:t>
+  </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">500</w:t>
   </w:r>
 </w:p></w:tc></w:tr>
 <w:tr><w:trPr><w:cantSplit></w:cantSplit></w:trPr><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
@@ -1750,6 +1960,19 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
     </w:rPr>
     <w:t xml:space="default">2.9</w:t>
   </w:r>
+</w:p></w:tc><w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:space="0" w:color="D3D3D3"></w:top><w:bottom w:val="single" w:space="0" w:color="D3D3D3"></w:bottom><w:start w:val="single" w:space="0" w:color="D3D3D3"></w:start><w:end w:val="single" w:space="0" w:color="D3D3D3"></w:end></w:tcBorders></w:tcPr><w:p>
+  <w:pPr>
+    <w:spacing w:before="0" w:after="60"/>
+    <w:keepNext/>
+    <w:jc w:val="end"/>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+      <w:sz w:val="20"/>
+    </w:rPr>
+    <w:t xml:space="default">478</w:t>
+  </w:r>
 </w:p></w:tc></w:tr></w:tbl>
 ```
 
@@ -1757,28 +1980,67 @@ climate data for BEC zones from 1991-2020, according to Wang et al.
 :::
 
 
+
 ## Data
 
-### National Terrestrial Ecosystem Monitoring System data products
+### Forest Structure
+
+The forest structural attributes (canopy height, canopy cover,
+structural complexity \[coefficient of variation of height returns\],
+basal area, aboveground biomass, and gross stem volume) were retrieved
+for 2015 from the 30-m spatial resolution dataset generated by Matasci
+et al. [@matasci2018; @matasci2018b]. Their method extends structural
+attributes derived from a set of lidar acquisitions and field plots
+across Canada. These data were generated for the treed pixels of Canada
+using the BAP Landsat surface reflectance composite [@hermosilla2016]
+and auxiliary data (i.e., topography, geography) using a k-Nearest
+Neighbour imputation [@matasci2018; @matasci2018b]. Accuracy metrics for
+imputed forest structural attributes range from an RMSE of 29.7%
+(structural complexity) to 82.3% (gross stem volume) and *R^2^* ranging
+from 0.125 (structural complexity) to 0.712 (gross stem volume)
+[@matasci2018; @matasci2018b].
+
+### Dynamic Habitat Indices
+
+The DHIs for the terrestrial area of BC were calculated following the
+procedures described in Razenkova et al
+@razenkovaMediumresolutionDynamicHabitatInPress. Although DHIs are
+typically derived from high-temporal, coarse spatial resolution imagery
+such as MODIS, we used Landsat surface reflectance data due to its finer
+spatial resolution, which corresponds to the 30 m ALS derived forest
+structure data. To account for the lower temporal resolution of Landsat,
+we generated a synthetic year of monthly data from a ten-year timespan
+of Landsat imagery. Google Earth Engine (GEE) [@gorelick2017] was used
+to obtain all valid Landsat pixels for the study area over a ten-year
+period centered on 2015. Selected pixels were filtered for shadows,
+clouds, and cloud shadows using the QA band derived from the fmask
+algorithm [@zhu2012], available on GEE. The NDVI was then calculated for
+each pixel in each image and summarized into a synthetic year of monthly
+data by calculating the median of each month's NDVI values, disregarding
+the year of the image. The calculations for the Cumulative DHI, Minimum
+DHI, and Variation DHI can be found in Table 2, alongside a summary of
+the main datasets analyzed in this study.
+
+### Ancillary Data
 
 #### Surface-reflectance image composites
 
 The forest structure, forest disturbance, and land cover layers are
 based on a 30-m best-available-pixel (BAP) composite generated by
 Hermosilla et al. @hermosilla2016 using the Composite2Change approach.
-The composites were developed for each year from 1984-2019 by selecting
-the best available imagery from the available growing season Landsat
-observations, removing pixels with clouds, cloud shadows, and haze. The
-methodology uses the scoring method from White et al. @white2014 to
-select the best pixel for a given year from Landsat-5 Thematic Mapper,
-Landsat-7 Enhanced Thematic Mapper Plus, and Landsat-8 Operational Land
-Imager imagery. A spectral trend analysis was conducted over these
-initial BAP composites using the Normalized Burn Ratio (a vegetation
-index) on each pixel, to remove unscreened noise, detect changes, and
-temporally interpolate data gaps. This resulted in a gap-free
-surface-reflectance composite across Canada [@hermosilla2015]. We use
-data from 2015 for all National Terrestrial Ecosystem Monitoring System
-products, except forest disturbances, which comprise the period
+The composites were developed for each year from 1984 to 2019 by
+selecting the best available imagery from the available growing season
+Landsat observations, removing pixels with clouds, cloud shadows, and
+haze. The methodology uses the scoring method from White et al.
+@white2014 to select the best pixel for a given year from Landsat-5
+Thematic Mapper, Landsat-7 Enhanced Thematic Mapper Plus, and Landsat-8
+Operational Land Imager imagery. A spectral trend analysis was conducted
+over these initial BAP composites using the Normalized Burn Ratio (a
+vegetation index) on each pixel, to remove unscreened noise, detect
+changes, and temporally interpolate data gaps. This resulted in a
+gap-free surface-reflectance composite across Canada [@hermosilla2015].
+The forest structure and land cover datasets are based on BAP data from
+2015, while the forest disturbance mask covers the period from
 1985-2020.
 
 #### Forest Disturbances
@@ -1808,40 +2070,6 @@ cover classification reached an overall accuracy of 77.9% ± 4%
 [@hermosilla2022]. We restricted our sample to the four treed land cover
 classes: broadleaf, coniferous, mixed wood, and wetland-treed.
 
-#### Forest Structure
-
-The forest structural attributes (canopy height, canopy cover,
-structural complexity \[coefficient of variation of height returns\],
-basal area, aboveground biomass, and gross stem volume) were derived
-from the 30-m spatial resolution dataset generated by Matasci et al.
-[@matasci2018; @matasci2018b]. In brief, the method extends structural
-attributes derived from a set of lidar acquisitions and field plots
-across Canada. These data were generated for the treed pixels of Canada
-using the BAP Landsat surface reflectance composite and auxiliary data
-(i.e., topography, geography) using a k-Nearest Neighbour imputation
-[@matasci2018; @matasci2018b]. Accuracy metrics for imputed forest
-structural attributes range from an RMSE of 24.5% (structural
-complexity) to 82.3% (gross stem volume) and *R^2^* ranging from 0.125
-(structural complexity) to 0.712 (gross stem volume) [@matasci2018;
-@matasci2018b].
-
-### Dynamic Habitat Indices
-
-The DHIs were calculated following Razenkova et al.
-@razenkovaMediumresolutionDynamicHabitatInPress for the terrestrial area
-of BC. In brief, we used Google Earth Engine [@gorelick2017] to obtain
-valid Landsat pixels for the study area across a ten-year time span,
-centered on 2015 (2011-2020), filtering out pixels containing shadows,
-clouds, and cloud shadows using the QA band derived from the fmask
-algorithm [@zhu2012], and then calculated the NDVI index. These
-estimates were composited into a synthetic year of monthly data by
-calculating the monthly median NDVI value. Finally, images of the sum,
-minimum, and coefficient of variation across this synthetic year of NDVI
-values were then calculated to represent the cumulative, minimum, and
-variation DHIs, respectively.
-
-A summary of the datasets used in this study is presented in Table 2.
-
 ## Sampling
 
 To obtain representative sample units of the EBV metrics across the
@@ -1849,21 +2077,21 @@ study area, we implemented stratified random sampling across the union
 of BEC zones (Table 1) and forest types (i.e., coniferous, broadleaf,
 mixed wood, and wetland treed; see @sec-study-area) of BC. Sample units
 were restricted to forested pixels that were surrounded by the same
-forest type to reduce the chance of sampling mixed pixels. We also
-required that sample units were selected from a homogeneous area, to
-reduce uncertainty associated with the input datasets [@shang2020];
-homogeneous areas were defined as 3x3-pixel windows with a coefficient
-of variation for canopy cover and canopy height below 0.5. A minimum
-sampling distance of 1-km was implemented to reduce the effects of
-spatial autocorrelation. Sample units that had been disturbed in the
-last 35 years were discarded by using the disturbance mask generated for
-the forested ecosystems of Canada [@hermosilla2016]. A maximum of 500
-sample units were selected from each stratum; in the many strata where
-this was not achieved, all sampling units meeting the above restrictions
-were selected. Sampling was conducted in R version 4.2.2 [@R-base] using
-the **sgsR** package [@R-sgsR]. Neighbourhood analyses for the land
-cover classes and coefficient of variations of canopy height and cover
-were calculated in Python version 3.9.
+forest type to reduce the chance of sampling mixed pixels. Sample units
+were selected from homogeneous areas to reduce uncertainty associated
+with the input datasets [@shang2020]. Homogeneous areas were defined as
+3x3-pixel windows with a coefficient of variation for canopy cover and
+canopy height below 0.5. A minimum sampling distance of 1 km was
+implemented to reduce the effects of spatial autocorrelation. Sample
+units that were disturbed in the last 35 years were excluded by using
+the disturbance mask generated for the forested ecosystems of Canada
+[@hermosilla2016]. A maximum of 500 sample units were selected from each
+stratum. In the strata where this was not achieved, all sampling units
+meeting the above restrictions were selected (see Table 1). The sampling
+was conducted in R version 4.2.2 [@R-base] using the **sgsR** package
+[@R-sgsR]. Neighbourhood analyses for the land cover classes and
+coefficient of variations of canopy height and cover were calculated in
+Python version 3.9.
 
 ## Analysis
 
@@ -1922,14 +2150,27 @@ Variation partitioning is displayed using a Venn diagram in which the
 percentage of variance explained by each dataset is in a circle, and the
 overlap between circles represents the overlap in variance explained. We
 add paths to the Venn diagram to indicate how the structural attributes
-contribute to the variation in the DHIs. Because the variation
-partitioning results summarize the full multivariate solution, rather
-than individual RDA axes, we present variation partitioning results
-alongside the path diagrams illustrating the details of the RDA results.
-RDA and variation partitioning calculations were done in R [@R-base]
-version 4.2.2 using the **vegan** package [@R-vegan]. The code
-associated with the processing and analysis is available at
+contribute the variation in the DHIs. Because the variation partitioning
+results summarize the full multivariate solution, rather than individual
+RDA axes, we present variation partitioning results alongside the path
+diagrams illustrating the details of the RDA results. RDA and variation
+partitioning calculations were done in R [@R-base] version 4.2.2 using
+the **vegan** package [@R-vegan]. The code associated with the
+processing and analysis is available at
 https://github.com/emuise/code-structProdSem.
+
+We present a simplified flow diagram of the data provenance to result
+pipeline in @fig-flow.
+
+
+
+::: {.cell}
+::: {.cell-output-display}
+![Flow diagram of the data to indicators to results pipeline implemented in this study.](../../outputs/p2_flow.drawio.png){#fig-flow}
+:::
+:::
+
+
 
 # Results
 
@@ -1942,22 +2183,23 @@ was held within the first RDA axis, which had strong loadings for all
 DHIs, with positive loadings for the cumulative and minimum DHIs, and
 negative loadings for the variation DHI. As such, we identified the RDA1
 axis as representing overall productivity. The overall productivity axis
-had similar loadings (between 0.24-0.27) for all modelled forest
+had similar loadings (between 0.26-0.28) for all modelled forest
 structural attributes and canopy cover. Canopy height had a smaller
-loading (0.1), while structural complexity was negatively correlated
+loading (0.13), while structural complexity was negatively correlated
 with the overall productivity axis. RDA2 explained much less of the
-variation in the DHIs. RDA2 had a large positive loading on the minimum
-DHI (0.55), with negative loadings on the cumulative (-0.19) and
-variation (-0.39) DHIs. Due to the minimum and variation having the most
+variation in the DHIs. RDA2 had a large negative loading on the minimum
+DHI (-0.47), with smaller, positive loadings on the cumulative (0.26)
+and variation (0.29) DHIs. Due to the minimum DHI having the largest
 influence on RDA2, we identified it as a seasonality axis. Canopy cover
-and structural complexity had the strongest (albeit negative; -0.17 and
--0.08, respectively) loadings on the seasonality axis (@fig-rda-var A).
+and structural complexity had the strongest (0.18 and 0.08,
+respectively) loadings on the seasonality axis (@fig-rda-var A).
 Variation partitioning highlighted that the majority of the explained
 variation in the DHIs was due to the primary forest structural
-attributes (canopy cover, canopy height, and structural complexity; 9%
+attributes (canopy cover, canopy height, and structural complexity; 7.7%
 variation explained). The overlap between primary and modelled
-attributes was 3.5%, and the modelled attributes explained 3.2% of the
+attributes was 4.2%, and the modelled attributes explained 3.4% of the
 variation on their own (@fig-rda-var B).
+
 
 
 ::: {.cell}
@@ -1967,25 +2209,27 @@ variation on their own (@fig-rda-var B).
 :::
 
 
+
 By forest type, results indicated similar or increased amounts of
 variance explained when compared to the overall dataset
 (@fig-fracts-bar). By BEC zone, results generally indicated smaller
-amounts of variation explained, which may be due to the relatively short
+amounts of variation explained, which may be due to the relatively small
 environmental gradients within the zones. The overlap between the
 primary and modelled datasets was often responsible for the majority of
 the variation explained in the DHIs, except when stratifying by forest
-types, where this was only true for the coniferous forests. For
-broadleaf, mixed wood, and wetland-treed forest types most of the
-explained variation in the DHIs was contributed by the primary forest
-structural attributes. A similar pattern was found by BEC zones, where
-the variation in the DHIs was principally explained by the overlap
-between primary and modelled forest structural attributes, except for
-CWH, where no variation was explained by the overlap. The Coastal BEC
-group had the lowest amount of variation explained, with Coastal
-Douglas-fir having \<1% of variation explained by the structural data.
-Overall, the DHIs were decoupled from the forest structural attributes,
-as shown by the overall variation explained being under 30% regardless
-of data stratification.
+types, where this was only true for coniferous forests. For broadleaf,
+mixed wood, and wetland-treed forest types most of the explained
+variation in the DHIs was contributed by the primary forest structural
+attributes. A similar pattern was found by BEC zones, where the
+variation in the DHIs was principally explained by the overlap between
+primary and modelled forest structural attributes, except for CWH, where
+the variation was entirely explained by the primary forest structural
+attributes. The Coastal BEC group had the lowest amount of variation
+explained, with Coastal Douglas-fir having \<1% of variation explained
+by the structural data. Overall, the DHIs were decoupled from the forest
+structural attributes, as shown by the overall variation explained being
+under 32% regardless of data stratification.
+
 
 
 ::: {.cell}
@@ -1995,6 +2239,7 @@ of data stratification.
 :::
 
 
+
 Stratification by forest type and ecosystem indicated varying loadings
 between the RDA axes and predictor/response variables (@fig-radar). All
 DHI variables had high loadings on RDA1 (similar to the overall
@@ -2002,22 +2247,21 @@ dataset), with positive cumulative and minimum DHI loadings, and
 negative variation DHI loadings. Colder BEC groups (Montane, North, and
 Alpine) had smaller minimum DHI loadings, which were half as large as
 the other DHI loadings. As such, we identify the first axis as being
-consistently associated with overall productivity. Canopy cover
-generally had the highest significant predictor loading on RDA1, except
-for in non-coniferous forest types (broadleaf, mixed wood and
-wetland-treed). These forest types typically had large negative loadings
-between RDA1 and structural complexity. The mixed wood forest and
-Coastal BEC group had no significant loadings from modelled forest
-structural attributes for RDA1. Examining the predictor loadings for
-RDA1 spatially across the province shows a geographic pattern in the
-loading strengths of primary forest structural attributes (@fig-fcc A).
-The interior (Northern and Southern BEC groups) of the province
-generally showed high canopy cover loadings, while the Boreal zones in
-the northwest had equal loadings in canopy cover and canopy height.
-Coastal zones were driven similarly by canopy height and structural
-complexity, with very low or non-significant loadings from canopy cover
-(@fig-fcc A; @fig-radar). Modelled forest structural attributes for RDA1
-generally show similar loadings across the province (@fig-fcc B).
+consistently associated with overall productivity. The predictor
+loadings for canopy cover and the modelled forest structural attributes
+were generally similar within the same stratification/BEC groups. The
+mixed wood forest and Coastal BEC group had no significant loadings from
+modelled forest structural attributes for RDA1. Examining the predictor
+loadings for RDA1 spatially across the province shows a geographic
+pattern in the loading strengths of primary forest structural attributes
+(@fig-fcc A). The interior (Northern and Southern BEC groups) of the
+province generally showed high canopy cover loadings, while the Boreal
+zones (Boreal White and Black Spruce and Sub-Boreal Pine – Spruce) in
+the northwest had large canopy height loadings. Coastal zones were
+driven similarly by canopy height and structural complexity, with very
+low or non-significant loadings from canopy cover (@fig-fcc A;
+@fig-radar).
+
 
 
 ::: {.cell}
@@ -2027,24 +2271,23 @@ generally show similar loadings across the province (@fig-fcc B).
 :::
 
 
-Only seven of sixteen BEC zones had a second RDA axis, with none being
-found in Coastal or Alpine BEC zones (@fig-radar; @fig-fcc). All of the
-Montane BEC zones had a secondary axis, while some in the Northern and
-Southern interior had a secondary axis. RDA2 often showed the largest
-absolute loadings in the minimum DHI, which was frequently, but not
-always, negative (@fig-radar; see supplementary material). The Montane
-group, which had the largest absolute minimum DHI loading, also had the
-largest absolute variation DHI loading. The secondary axis had smaller
-loadings in the variation and cumulative DHIs, with only the Southern
-BEC group having a lower variation DHI loading than cumulative DHI. RDA2
-has lower absolute predictor loadings (maximum of \~0.25) when compared
-to RDA1 (maximum of \~0.5), with infrequently significant loadings for
-canopy cover and structural complexity (@fig-radar). Among the primary
-forest structural attributes, RDA2 had the highest loadings with canopy
-height in the Southern group, while the Northern group had slightly
-larger structural complexity loadings (@fig-radar; @fig-fcc C). Similar
-to RDA1, the modelled forest structural attribute loadings were
-generally similar to one another (@fig-radar; @fig-fcc D).
+
+Only four of sixteen BEC zones had a second RDA axis, with none being
+found in Coastal or Alpine BEC zones (@fig-radar; @fig-fcc). Two Montane
+BEC zones had a secondary axis, while the Northern and Southern interior
+groups each had one zone with a secondary axis. RDA2 often showed the
+largest absolute loadings in the minimum DHI, which was frequently, but
+not always, negative (@fig-radar; see supplementary material). The
+Montane group had the largest absolute minimum and variation DHI
+loadings, which were notably the opposite sign of all other groups with
+a secondary axis. RDA2 had lower absolute predictor loadings (maximum of
+\~0.25) when compared to RDA1 (maximum of \~0.5), with infrequently
+significant loadings for canopy cover and structural complexity
+(@fig-radar). There was no consistent loading pattern found in RDA2 for
+the primary predictor variables (@fig-radar; @fig-fcc C). Similar to
+RDA1, the modelled forest structural attribute loadings were generally
+similar to one another (@fig-radar; @fig-fcc D).
+
 
 
 ::: {.cell}
@@ -2054,70 +2297,73 @@ generally similar to one another (@fig-radar; @fig-fcc D).
 :::
 
 
+
 # Discussion
 
-Relationships between forest ecosystem structure and function are
-increasingly being examined due to advances in data collection methods
-[@ali2019; @radeloff2019; @ali2016]. Prior studies have shown both
-theoretical [@knyazikhin1998] and empirical [@atkins2018] relationships
-between forest ecosystem structure and function, however, the direction
-and significance of these relationships have not been consistent
-[@ali2019]. We examined these relationships across the province of BC,
-Canada, which has significant environmental gradients
-[@valentine1978soil; @pojar1987] by using wall-to-wall forest structural
-attributes generated by imputing the lidar-derived attributes with
-Landsat best-available-pixel composites [@matasci2018; @matasci2018b]
-and Landsat-derived summaries of intra-annual vegetation productivity
-[@radeloff2019; @razenkovaMediumresolutionDynamicHabitatInPress]. We
-found a weak relationship between these remote sensing indicators of
-forest ecosystem structure and function overall across BC (15.7% of
-variation explained in the DHIs by forest structural attributes), as
-well as within individual BEC zones and forest types found in BC
-(@fig-fracts-bar).
+Relationships between forest ecosystem structure and function are being
+examined more frequently due to advances in data collection methods,
+such as remote sensing [@ali2019; @radeloff2019; @ali2016]. This paper
+assesses the complementarity of two potential ecosystem-scale EBV
+indicators for ecosystem monitoring across BC, Canada. Redundancy
+analysis was used to determine the information overlap of wall-to-wall
+maps of forest structural attributes and the DHIs, which were both
+generated from Landsat imagery. This analysis revealed a weak
+relationship between the two sets of remote sensing derived indicators,
+with only 15.7% of the variation in the DHIs being explained by the
+forest structural attributes (@fig-rda-var). This relationship was also
+assessed across the different forest classes and ecosystems of British
+Columbia, and similar results were found (@fig-fracts-bar). The small
+amount of overlap between the two datasets suggests that they are
+suitable for use in ecosystem monitoring programs, despite both being
+derived from Landsat imagery.
+
+We also evaluated whether primary forest structural attributes provide
+more information than modelled forest structural attributes for
+selecting indicators within a single EBV class. It was found that
+standard lidar-derived measurements, such as canopy height, canopy
+cover, and structural complexity (as proposed by Valbuena et al.
+[@valbuena2020], contribute the majority of the explained variation in
+the DHIs, either independently or in their overlap with the modelled
+forest structural attributes. This could be expected as modelled forest
+structural attributes are generally directly based on the primary forest
+structural attributes [@coops2021], however, the creation of modelled
+forest structural attributes involves modelling expertise and processing
+time overhead [@matasci2018; @matasci2018b; @duncanson2022]. One
+advantage of interpreted products is their potential uptake by a broader
+set of users and their ability to be closely linked with management
+actions and monitoring results. This is exemplified by the use of forest
+biomass monitoring for climate change mitigation [@duncanson2022]. While
+either set of forest structural attributes may be relevant for a given
+monitoring task, it is important to note that the primary structural
+attributes contain the majority of the variation across both classes of
+structural attributes (@fig-fracts-bar). Additionally, the modelled
+structural attributes are generally not related to structural
+complexity, which has often been found to be strongly related to
+biodiversity metrics [@ehbrecht2021]. Therefore, we generally recommend
+using the primary forest structural attributes.
 
 Our findings indicate that remote sensing-derived forest ecosystem
-structure and forest ecosystem function EBVs are well suited to be used
-in a complementary fashion for ecosystem integrity monitoring, despite
-both EBVs being derived from surface reflectance from the Landsat series
-of satellites [@hansen2021]. While we assessed the complementarity of
+structure and forest ecosystem function EBVs can be applied in a
+complementary fashion for ecosystem monitoring [@hansen2021], despite
+both EBVs using surface reflectance values from the Landsat series of
+satellites in either their calculation or imputation [@radeloff2019;
+@matasci2018; @matasci2018b]. While we assessed the complementarity of
 ecosystem structure and function, a single pair of EBVs measurable at
 the ecosystem scale, other EBV class combinations at finer scales should
-also be assessed for complementarity. This is especially relevant in
-cases such as ours, where remote sensing datasets such as Landsat can
-generate a large number of EBVs in different classes [@skidmore2021]. In
-addition, Skidmore et al. [@skidmore2021] highlighted that many
-satellite-derived biodiversity products can fall into multiple EBV
-classes simultaneously -- e.g., leaf area index being in the ecosystem
-structure, ecosystem function, and species trait EBV classes --
-depending on the spatial scale of analysis and goal of the monitoring
-program. As such, it is relevant to consider which classes each
-biodiversity product should belong to, for given spatial and temporal
-extents. Other EBVs, such as those found in the community composition
-and species population classes, may also be inherently linked due to
-being based on the same data sources, even if not observed using remote
-sensing platforms.
-
-Further, we assessed the information-richness of primary forest
-structural attributes when compared to modelled forest structural
-attributes to support indicator selection within a single EBV class. We
-found that standard lidar-derived measurements, such as canopy height,
-canopy cover, and structural complexity (as proposed by Valbuena et al.
-[@valbuena2020]) contribute to the majority of the explained variation
-in the DHIs, either independently or in their overlap with the modelled
-forest structural attributes (@fig-fracts-bar). This could be expected
-as modelled forest structural attributes are generally directly based on
-the primary forest structural attributes [@coops2021], however, the
-creation of modelled forest structural attributes involves modelling
-expertise and processing time overhead [@matasci2018; @matasci2018b;
-@duncanson2022]. One advantage of these interpreted products is
-potential uptake by a broader set of users, and their ability to be more
-closely linked to management actions and monitoring results, as is the
-case with forest biomass for climate change mitigation [@duncanson2022].
-While either set of forest structural attributes may be most relevant
-for a given monitoring task, we note that the modelled structural
-attributes do not strongly overlap with structural complexity, and as
-such, we generally recommend to use the primary forest structural
-attributes.
+also be assessed for complementarity. This is especially relevant when
+remote sensing datasets such as Landsat can generate a large number of
+EBVs in different classes [@skidmore2021]. In addition, Skidmore et al.
+[@skidmore2021] highlighted that many satellite-derived biodiversity
+products can inform upon multiple EBV classes simultaneously -- e.g.,
+leaf area index being recognized as a ecosystem structure, ecosystem
+function, and species trait EBV indicator -- depending on the spatial
+scale of analysis and goal of the monitoring program. As such, it is
+relevant to consider which EBV classes biodiversity products can inform,
+for given spatial and temporal extents. Other EBVs, such as those found
+in the community composition and species population classes may also be
+informed by these products. Further, their reliance on species level
+data also means that they could be inherently correlated with one
+another.
 
 In the axis loadings we found a strong linkage between canopy cover,
 structural complexity, and the DHIs, which was expected as these metrics
@@ -2133,7 +2379,7 @@ placement [@chave2005; @lutz2018].
 
 Forest types with deciduous trees (namely broadleaf and mixed wood) had
 large, negative structural complexity loadings when compared to the
-other forest structural attributes (@fig-radar), with mixed wood forests
+other forest structural attributes (@fig-radar), with forest types
 having no modelled structural attributes associated with the DHIs. This
 structural complexity-DHIs linkage may be due to understory cover
 providing additional photosynthesis in these forest types
@@ -2152,7 +2398,7 @@ structural complexity may be due to the dominance of coniferous forests
 in these ecosystems, which have been shown to have lower forest
 structural complexity across the globe [@ehbrecht2021], with weaker
 relationships between canopy height and structural complexity being
-found [@atkins2022].
+found than deciduous forests [@atkins2022].
 
 BC shows varying forest structural drivers of the DHIs depending on the
 geographic location (@fig-fcc). The interior of BC is drier and warmer,
@@ -2173,32 +2419,39 @@ found in these zones leading to potentially saturated NDVI values
 throughout the year. These consistent forest structural metrics --- such
 as the high canopy cover values found in the Coastal BEC zones --- may
 also lead to lower amounts of variation explained by these metrics,
-leading to them being less informative in the loadings, and other
-metrics, such as structural complexity having higher amounts of variance
-explained (@fig-radar). These complex linkages between climate, forest
+leading to them having smaller loadings, and other metrics with higher
+variation in their values, such as structural complexity, having larger
+loadings (@fig-radar). These complex linkages between climate, forest
 structure, and forest productivity become further complicated by the
 extreme environmental and topographic gradients within BC's ecosystems
 [@pojar1987; @valentine1978soil], which may warrant study into the scale
 of these interactions, with a finer (or non-climate based)
 ecoregionalization potentially revealing different relationships between
-ecosystem structure and function.
+ecosystem structure and function. Further, when examining these
+relationships through remote-sensing derived indicators, we recognize
+that they may change over time and space in response to disturbances,
+both anthropogenic and natural. For example, modifying the biomass of an
+area through forest clearing, fires, or insect disturbances may disrupt
+the underlying assumptions of the DHIs, as abrupt changes in the middle
+of the year may lead to low Minimum DHI values, high Variation DHI
+values, and lower than normal Cumulative DHI values.
 
 Various relationship directions and strengths have been found between
 forest structure and forest function [@ali2019]. Temperate and boreal
 forests often have mixed or negative structure-function relationships,
 while tropical forests often have positive relationships [@ali2019]. We
-found that forest structure and function were not strongly linked to one
-another, both across the full study area, and when stratified by
-ecosystem and forest type (@fig-radar). Forest type models showed higher
-amounts of variation explained, which may indicate the linkages between
-forest structure and function are stronger at finer spatial scales,
-potentially driven by finer scale landscape patterns such as terrain and
-land cover, rather than climate [@thom2021]. Notably, the BEC zones and
-forest types are delineated at different spatial scales; forest types
-are mapped at a 30 m pixel size [@hermosilla2022; @hermosilla2018], and
-can be found across the entire province, while BEC zones do not span the
-entirety of the province, and are mapped at a much coarser scale
-[@pojar1987].
+found that indicators of forest structure and function were not strongly
+linked to one another, both across the full study area and when
+stratified by ecosystem and forest type (@fig-radar). The forest type
+models showed higher amounts of variation explained, which may indicate
+the linkages between forest structure and function are stronger at finer
+spatial scales, potentially driven by finer scale landscape patterns
+such as terrain and land cover, rather than climate [@thom2021].
+Notably, the BEC zones and forest types are delineated at different
+spatial scales; forest types are mapped at a 30 m pixel size
+[@hermosilla2022; @hermosilla2018], and can be found across the entire
+province, while BEC zones do not span the entirety of the province, and
+are mapped at a much coarser scale [@pojar1987].
 
 Across British Columbia, the DHIs have been shown to be strongly
 correlated with one another (@fig-rda-var). While this does imply that
@@ -2320,23 +2573,26 @@ https://github.com/emuise/code-structProdSem.
 Figure 1: Location of Biogeoclimatic Ecosystem Classification (BEC)
 zones in British Columbia.
 
-Figure 2: A) Axis loadings from redundancy analysis (RDA) of primary and
+Figure 2: Flow diagram of the data to indicators to results pipeline
+implemented in this study.
+
+Figure 3: A) Axis loadings from redundancy analysis (RDA) of primary and
 modelled forest structure variables on the dynamic habitat indices
 (DHIs). B) Results from variation partitioning of primary and modelled
 forest structure variables on the DHIs. Both visualized analyses are
 across the entire dataset. See supplementary information for results
 from each Biogeoclimatic Ecosystem Classification zone and forest type.
 
-Figure 3: Stacked bar plot showing the proportion of the variation in
+Figure 4: Stacked bar plot showing the proportion of the variation in
 the Dynamic Habitat Indices (DHIs) explained by primary, modelled, and
 the overlap between primary and modelled structure variables across the
 stratified and overall datasets.
 
-Figure 4: Parallel coordinate plots of average significant loading
+Figure 5: Parallel coordinate plots of average significant loading
 strength by Biogeoclimatic Ecosystem Classification (BEC) group, forest
 type, and British Columbia. Note the varying y axes.
 
-Figure 5: False colour maps by Biogeoclimatic Ecosystem Classification
+Figure 6: False colour maps by Biogeoclimatic Ecosystem Classification
 (BEC) zone of axis loadings for the first redundancy analysis (RDA) axis
 (A and B) and second RDA axis (C and D). Colour values are normalized to
 the maximum loading of each variable. A and C show axis loadings for
